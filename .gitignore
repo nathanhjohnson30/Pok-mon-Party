@@ -1,0 +1,9 @@
+# Local-only worktrees and editor files
+PagesPublish/
+RepoCleanup/
+Pokemon Party/
+.vscode/
+
+# OS metadata
+Thumbs.db
+.DS_Store
