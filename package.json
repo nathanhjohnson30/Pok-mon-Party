@@ -1,0 +1,17 @@
+{
+  "name": "pok-mon-party",
+  "version": "1.0.0",
+  "description": "local area Pokémon game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://localhost:26831/nathanhjohnson30/Pok-mon-Party"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

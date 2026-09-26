@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokémon Party</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="hero">
+        <p class="eyebrow">LAN event host</p>
+        <h1>Pokémon Party</h1>
+        <p class="subtitle">
+          Host a FireRed-inspired local multiplayer event in your browser, share the event code, and battle together on the same network.
+        </p>
+      </section>
+
+      <section class="panel" id="connection-panel">
+        <div class="grid">
+          <form id="host-form" class="stack">
+            <h2>Host an event</h2>
+            <label>
+              Your trainer name
+              <input id="host-name" name="name" maxlength="24" required />
+            </label>
+            <button type="submit">Create event</button>
+          </form>
+
+          <form id="join-form" class="stack">
+            <h2>Join an event</h2>
+            <label>
+              Event code
+              <input id="join-code" name="code" maxlength="5" required />
+            </label>
+            <label>
+              Your trainer name
+              <input id="join-name" name="name" maxlength="24" required />
+            </label>
+            <button type="submit">Join event</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="event-panel">
+        <div class="event-header">
+          <div>
+            <p class="eyebrow">Current event</p>
+            <h2 id="event-code-label">-----</h2>
+          </div>
+          <div class="stack tight">
+            <span id="phase-pill" class="pill">Lobby</span>
+            <span id="status-text">Waiting for players</span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <section class="stack">
+            <h3>Choose your Pokémon</h3>
+            <div id="pokemon-list" class="pokemon-list"></div>
+            <div class="actions">
+              <button id="ready-button" type="button" disabled>I'm ready</button>
+              <button id="start-button" type="button" class="secondary hidden">Start battle</button>
+            </div>
+          </section>
+
+          <section class="stack">
+            <h3>Players</h3>
+            <div id="players-list" class="stack"></div>
+          </section>
+        </div>
+
+        <section class="stack">
+          <h3>Battle controls</h3>
+          <div id="battle-actions" class="actions wrap"></div>
+        </section>
+
+        <section class="stack">
+          <h3>Event log</h3>
+          <ul id="event-log" class="log"></ul>
+        </section>
+      </section>
+
+      <p id="message" class="message" aria-live="polite"></p>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

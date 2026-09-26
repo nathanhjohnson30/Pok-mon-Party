@@ -1,0 +1,42 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { EventStore } = require("../lib/event-store");
+
+test("host and guest can create an event, get ready, and finish a battle", () => {
+  const store = new EventStore();
+  const hosted = store.createEvent("Red");
+  const joined = store.joinEvent(hosted.code, "Blue");
+
+  store.choosePokemon(hosted.code, hosted.playerId, "Charmander");
+  store.choosePokemon(hosted.code, joined.playerId, "Bulbasaur");
+  store.setReady(hosted.code, hosted.playerId, true);
+  store.setReady(hosted.code, joined.playerId, true);
+
+  let event = store.startBattle(hosted.code, hosted.playerId);
+  assert.equal(event.phase, "battle");
+  assert.equal(event.turn, 1);
+
+  while (event.phase === "battle") {
+    event = store.submitMove(hosted.code, hosted.playerId, "Ember");
+
+    if (event.phase !== "battle") {
+      break;
+    }
+
+    event = store.submitMove(hosted.code, joined.playerId, "Vine Whip");
+  }
+
+  assert.equal(event.phase, "finished");
+  assert.ok(event.winnerId);
+  assert.match(event.log[0], /wins the event battle/);
+});
+
+test("players must pick a Pokémon before getting ready", () => {
+  const store = new EventStore();
+  const hosted = store.createEvent("Leaf");
+
+  assert.throws(
+    () => store.setReady(hosted.code, hosted.playerId, true),
+    /Pick a Pokémon before getting ready/,
+  );
+});
