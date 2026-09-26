@@ -71,3 +71,29 @@ test("the host cannot start until every player is ready", () => {
     /Every player must pick a Pokémon and get ready/,
   );
 });
+
+test("players cannot change a locked move and the final turn count stays on the last resolved round", () => {
+  const store = new EventStore();
+  const hosted = store.createEvent("Red");
+  const joined = store.joinEvent(hosted.code, "Blue");
+
+  store.choosePokemon(hosted.code, hosted.playerId, "Charmander");
+  store.choosePokemon(hosted.code, joined.playerId, "Bulbasaur");
+  store.setReady(hosted.code, hosted.playerId, true);
+  store.setReady(hosted.code, joined.playerId, true);
+  store.startBattle(hosted.code, hosted.playerId);
+
+  const event = store.events.get(hosted.code);
+  event.players[0].currentHp = 10;
+  event.players[1].currentHp = 10;
+
+  store.submitMove(hosted.code, hosted.playerId, "Ember");
+  assert.throws(
+    () => store.submitMove(hosted.code, hosted.playerId, "Scratch"),
+    /already locked in a move/,
+  );
+
+  const finished = store.submitMove(hosted.code, joined.playerId, "Vine Whip");
+  assert.equal(finished.phase, "finished");
+  assert.equal(finished.turn, 1);
+});

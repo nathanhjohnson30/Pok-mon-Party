@@ -57,7 +57,12 @@
         <div class="grid">
           <section class="stack">
             <h3>Choose your Pokémon</h3>
-            <div id="pokemon-list" class="pokemon-list"></div>
+            <div
+              id="pokemon-list"
+              class="pokemon-list"
+              role="group"
+              aria-label="Available Pokémon choices"
+            ></div>
             <div class="actions">
               <button id="ready-button" type="button" disabled>I'm ready</button>
               <button id="start-button" type="button" class="secondary hidden">Start battle</button>
@@ -72,7 +77,12 @@
 
         <section class="stack">
           <h3>Battle controls</h3>
-          <div id="battle-actions" class="actions wrap"></div>
+          <div
+            id="battle-actions"
+            class="actions wrap"
+            role="group"
+            aria-label="Battle move selection"
+          ></div>
         </section>
 
         <section class="stack">

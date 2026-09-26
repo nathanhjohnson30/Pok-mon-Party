@@ -138,6 +138,10 @@ function renderBattleActions() {
 
   const pokemon = state.pokemonCatalog.find((entry) => entry.name === currentPlayer.pokemon);
 
+  if (!pokemon) {
+    return;
+  }
+
   for (const move of pokemon.moves) {
     const button = document.createElement("button");
     button.type = "button";
