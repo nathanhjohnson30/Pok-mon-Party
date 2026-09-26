@@ -768,6 +768,7 @@
             <div id="detHabitatPanel" class="retro-box center-content pokemon-habitat habitat-normal" style="margin-top: 8px; padding: 6px; flex-shrink:0;">
                 <img id="detSprite" class="sprite-img habitat-draggable" src="">
             </div>
+            <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground(1)" style="display:none; background:#4060a0; margin-top:0; font-size:0.75rem;">✨ AI BACKGROUND</button>
             <div id="detInfoContainer" class="retro-box">
                 <p id="detType"><strong>TYPE:</strong> ---</p>
                 <p id="detHtWt"><strong>HT:</strong> ---  <strong>WT:</strong> ---</p>
@@ -2353,6 +2354,30 @@
             if(element && pokemon) element.style.backgroundImage = `url("${getPokemonBackgroundFile(pokemon)}")`;
         }
 
+        function generatePokedexAiBackground(pokemonId) {
+            if(Number(pokemonId) !== 1) return;
+            const panel = document.getElementById('detHabitatPanel');
+            const button = document.getElementById('detAiBackgroundBtn');
+            const pokemon = masterGen1.find(entry => entry.id === 1);
+            if(!panel || !button || !pokemon) return;
+            button.disabled = true;
+            button.innerText = '✨ GENERATING...';
+            const prompt = `A lush, cinematic Bulbasaur habitat for a handheld RPG Pokedex entry: ${pokemon.flavor}. Bulbasaur is a small blue-green quadruped Pokemon with a leafy seed on its back, resting in a sunlit forest clearing with broad leaves, moss, ferns, soft morning mist, and warm natural light. No text, no logos, no other creatures, no battle arena, no visible Pokemon silhouette besides Bulbasaur's implied habitat. Rich greens with gentle blue accents, detailed but calm, wide composition. ${pokemon.type} type, ${getPokemonHabitat(pokemon)} habitat.`;
+            const image = new Image();
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=bulbasaur-pokedex-${Date.now()}`;
+            image.onload = () => {
+                panel.style.setProperty('--pokemon-bg', `url("${imageUrl}")`);
+                button.disabled = false;
+                button.innerText = '✨ REGENERATE BACKGROUND';
+            };
+            image.onerror = () => {
+                button.disabled = false;
+                button.innerText = '✨ AI BACKGROUND (RETRY)';
+                showToast('AI background generation failed; the local habitat remains active.');
+            };
+            image.src = imageUrl;
+        }
+
         function fitBattleSprite(sprite, pokemon, role) {
             if(!sprite || !pokemon) return;
             const heightMatch = String(pokemon.ht || '').match(/(\d+)'(?:\s*)(\d+)?/);
@@ -2969,6 +2994,12 @@
             if(currentPokedexIndex < 0) currentPokedexIndex = 0;
             const p = masterGen1[currentPokedexIndex];
             setHabitatPanel('detHabitatPanel', p.type, p);
+            const aiBackgroundButton = document.getElementById('detAiBackgroundBtn');
+            if(aiBackgroundButton) {
+                aiBackgroundButton.style.display = p.id === 1 ? 'block' : 'none';
+                aiBackgroundButton.disabled = false;
+                aiBackgroundButton.innerText = '✨ AI BACKGROUND';
+            }
 
             document.getElementById('detNumberName').innerText = `No.${String(p.id).padStart(3, '0')} ${p.name}`;
             const detSprite = document.getElementById('detSprite');
