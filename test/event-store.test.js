@@ -72,7 +72,7 @@ test("the host cannot start until every player is ready", () => {
   );
 });
 
-test("players cannot change a locked move and the final turn count stays on the last resolved round", () => {
+test("players cannot change a locked move and the final turn count matches the last resolved round", () => {
   const store = new EventStore();
   const hosted = store.createEvent("Red");
   const joined = store.joinEvent(hosted.code, "Blue");
@@ -81,11 +81,7 @@ test("players cannot change a locked move and the final turn count stays on the 
   store.choosePokemon(hosted.code, joined.playerId, "Bulbasaur");
   store.setReady(hosted.code, hosted.playerId, true);
   store.setReady(hosted.code, joined.playerId, true);
-  store.startBattle(hosted.code, hosted.playerId);
-
-  const event = store.events.get(hosted.code);
-  event.players[0].currentHp = 10;
-  event.players[1].currentHp = 10;
+  let event = store.startBattle(hosted.code, hosted.playerId);
 
   store.submitMove(hosted.code, hosted.playerId, "Ember");
   assert.throws(
@@ -93,7 +89,15 @@ test("players cannot change a locked move and the final turn count stays on the 
     /already locked in a move/,
   );
 
-  const finished = store.submitMove(hosted.code, joined.playerId, "Vine Whip");
-  assert.equal(finished.phase, "finished");
-  assert.equal(finished.turn, 1);
+  let roundsPlayed = 1;
+  event = store.submitMove(hosted.code, joined.playerId, "Vine Whip");
+
+  while (event.phase === "battle") {
+    store.submitMove(hosted.code, hosted.playerId, "Ember");
+    event = store.submitMove(hosted.code, joined.playerId, "Vine Whip");
+    roundsPlayed += 1;
+  }
+
+  assert.equal(event.phase, "finished");
+  assert.equal(event.turn, roundsPlayed);
 });

@@ -7,6 +7,12 @@ const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = path.join(__dirname, "public");
 const store = new EventStore();
 
+function createClientError(message, statusCode = 400) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
 function json(response, statusCode, payload) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -16,7 +22,11 @@ function json(response, statusCode, payload) {
 
 function sendError(response, statusCode, error) {
   const message =
-    error instanceof Error && error.message ? error.message : statusCode >= 500 ? "Internal server error." : "Request failed.";
+    statusCode >= 500
+      ? "Internal server error."
+      : error instanceof Error && error.message
+        ? error.message
+        : "Request failed.";
   json(response, statusCode, { error: message });
 }
 
@@ -34,7 +44,7 @@ async function readBody(request) {
   try {
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   } catch {
-    throw new Error("Request body must be valid JSON.");
+    throw createClientError("Request body must be valid JSON.");
   }
 }
 
@@ -67,7 +77,12 @@ async function serveStatic(requestPath, response) {
     });
     response.end(file);
   } catch (error) {
-    sendError(response, 404, new Error("Page not found."));
+    if (error && error.code === "ENOENT") {
+      sendError(response, 404, new Error("Page not found."));
+      return;
+    }
+
+    throw error;
   }
 }
 
@@ -88,7 +103,7 @@ async function handleApi(request, response, url) {
   const eventMatch = pathname.match(/^\/api\/events\/([A-Z0-9]+)(?:\/([a-z-]+))?$/);
 
   if (!eventMatch) {
-    throw new Error("API route not found.");
+    throw createClientError("API route not found.", 404);
   }
 
   const [, code, action] = eventMatch;
@@ -140,7 +155,7 @@ async function handleApi(request, response, url) {
 }
 
 const server = http.createServer(async (request, response) => {
-  const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+  const url = new URL(request.url, "http://localhost");
 
   try {
     if (url.pathname.startsWith("/api/")) {
@@ -150,7 +165,7 @@ const server = http.createServer(async (request, response) => {
 
     await serveStatic(url.pathname, response);
   } catch (error) {
-    const statusCode = error.message === "API route not found." ? 404 : 400;
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
     sendError(response, statusCode, error);
   }
 });

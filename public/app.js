@@ -60,6 +60,12 @@ function subscribeToEvent(code) {
   };
 }
 
+window.addEventListener("beforeunload", () => {
+  if (state.stream) {
+    state.stream.close();
+  }
+});
+
 function renderPokemonChoices() {
   const currentPlayer = getCurrentPlayer();
   const isLobby = state.event?.phase === "lobby";
@@ -267,15 +273,17 @@ readyButton.addEventListener("click", async () => {
     return;
   }
 
+  const newReadyValue = !currentPlayer.ready;
+
   try {
     await request(`/api/events/${state.eventCode}/ready`, {
       method: "POST",
       body: {
         playerId: state.playerId,
-        ready: !currentPlayer.ready,
+        ready: newReadyValue,
       },
     });
-    setMessage(currentPlayer.ready ? "You are no longer ready." : "You are ready to battle.");
+    setMessage(newReadyValue ? "You are ready to battle." : "You are no longer ready.");
   } catch (error) {
     setMessage(error.message);
   }
