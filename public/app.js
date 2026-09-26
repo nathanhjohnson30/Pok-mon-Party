@@ -71,11 +71,15 @@ function renderPokemonChoices() {
     card.type = "button";
     card.className = `pokemon-card${currentPlayer?.pokemon === pokemon.name ? " selected" : ""}`;
     card.disabled = !isLobby;
-    card.innerHTML = `
-      <h4>${pokemon.name}</h4>
-      <p class="meta">HP ${pokemon.hp} · ATK ${pokemon.attack} · DEF ${pokemon.defense} · SPD ${pokemon.speed}</p>
-      <p class="meta">${pokemon.moves.map((move) => move.name).join(" · ")}</p>
-    `;
+    const title = document.createElement("h4");
+    title.textContent = pokemon.name;
+    const stats = document.createElement("p");
+    stats.className = "meta";
+    stats.textContent = `HP ${pokemon.hp} · ATK ${pokemon.attack} · DEF ${pokemon.defense} · SPD ${pokemon.speed}`;
+    const moves = document.createElement("p");
+    moves.className = "meta";
+    moves.textContent = pokemon.moves.map((move) => move.name).join(" · ");
+    card.append(title, stats, moves);
     card.addEventListener("click", async () => {
       try {
         setMessage("Picking your Pokémon...");
@@ -107,12 +111,18 @@ function renderPlayers() {
         : `${Math.max(player.currentHp, 0)} / ${player.maxHp} HP`;
 
     card.className = "player-card";
-    card.innerHTML = `
-      <h4>${player.name}${isCurrentPlayer ? " (you)" : ""}</h4>
-      <p class="meta">${player.pokemon || "No Pokémon selected"}</p>
-      <p class="meta">${hpSummary}</p>
-      <p class="meta">${player.ready ? "Ready" : "Waiting"}${player.submittedMove ? " · Move locked" : ""}</p>
-    `;
+    const title = document.createElement("h4");
+    title.textContent = `${player.name}${isCurrentPlayer ? " (you)" : ""}`;
+    const pokemon = document.createElement("p");
+    pokemon.className = "meta";
+    pokemon.textContent = player.pokemon || "No Pokémon selected";
+    const hp = document.createElement("p");
+    hp.className = "meta";
+    hp.textContent = hpSummary;
+    const readiness = document.createElement("p");
+    readiness.className = "meta";
+    readiness.textContent = `${player.ready ? "Ready" : "Waiting"}${player.submittedMove ? " · Move locked" : ""}`;
+    card.append(title, pokemon, hp, readiness);
     playersList.appendChild(card);
   }
 }

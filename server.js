@@ -15,7 +15,9 @@ function json(response, statusCode, payload) {
 }
 
 function sendError(response, statusCode, error) {
-  json(response, statusCode, { error: error.message || String(error) });
+  const message =
+    error instanceof Error && error.message ? error.message : statusCode >= 500 ? "Internal server error." : "Request failed.";
+  json(response, statusCode, { error: message });
 }
 
 async function readBody(request) {
@@ -29,7 +31,11 @@ async function readBody(request) {
     return {};
   }
 
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw new Error("Request body must be valid JSON.");
+  }
 }
 
 function getContentType(filePath) {
@@ -46,7 +52,7 @@ function getContentType(filePath) {
 
 async function serveStatic(requestPath, response) {
   const normalizedPath = requestPath === "/" ? "/index.html" : requestPath;
-  const absolutePath = path.join(PUBLIC_DIR, normalizedPath);
+  const absolutePath = path.resolve(PUBLIC_DIR, `.${normalizedPath}`);
 
   if (!absolutePath.startsWith(PUBLIC_DIR)) {
     json(response, 403, { error: "Forbidden" });

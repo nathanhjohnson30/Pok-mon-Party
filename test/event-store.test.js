@@ -40,3 +40,34 @@ test("players must pick a Pokémon before getting ready", () => {
     /Pick a Pokémon before getting ready/,
   );
 });
+
+test("only the host can start the battle", () => {
+  const store = new EventStore();
+  const hosted = store.createEvent("Red");
+  const joined = store.joinEvent(hosted.code, "Blue");
+
+  store.choosePokemon(hosted.code, hosted.playerId, "Charmander");
+  store.choosePokemon(hosted.code, joined.playerId, "Squirtle");
+  store.setReady(hosted.code, hosted.playerId, true);
+  store.setReady(hosted.code, joined.playerId, true);
+
+  assert.throws(
+    () => store.startBattle(hosted.code, joined.playerId),
+    /Only the host can start the event/,
+  );
+});
+
+test("the host cannot start until every player is ready", () => {
+  const store = new EventStore();
+  const hosted = store.createEvent("Red");
+  const joined = store.joinEvent(hosted.code, "Blue");
+
+  store.choosePokemon(hosted.code, hosted.playerId, "Charmander");
+  store.choosePokemon(hosted.code, joined.playerId, "Squirtle");
+  store.setReady(hosted.code, hosted.playerId, true);
+
+  assert.throws(
+    () => store.startBattle(hosted.code, hosted.playerId),
+    /Every player must pick a Pokémon and get ready/,
+  );
+});

@@ -17,6 +17,7 @@ Open `http://localhost:3000` on the host machine, create an event, and share the
 - Up to three more players join with the event code.
 - Every trainer picks a Pokémon, marks ready, and the host starts the battle.
 - During battle each player locks in a move, then the server resolves the turn and broadcasts the updated state to everyone.
+- In battles with more than two trainers, each move automatically targets the next trainer in join order who is still standing.
 
 ## Verify
 
