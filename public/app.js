@@ -1,3 +1,11 @@
+const {
+  applyCatalogPayload,
+  applyEventPayload,
+  getLobbyControls,
+  getReadyToggle,
+  getStatusText,
+} = window.PokemonPartyAppState;
+
 const state = {
   playerId: null,
   eventCode: null,
@@ -190,28 +198,20 @@ function render() {
   }
 
   const currentPlayer = getCurrentPlayer();
-  const isHost = state.event.hostId === state.playerId;
-  const allReady = state.event.players.length > 1 && state.event.players.every((player) => player.ready);
+  const controls = getLobbyControls(state.event, state.playerId);
 
   connectionPanel.classList.add("hidden");
   eventPanel.classList.remove("hidden");
 
   eventCodeLabel.textContent = state.event.code;
   phasePill.textContent = state.event.phase;
-  statusText.textContent =
-    state.event.phase === "lobby"
-      ? `${state.event.players.length}/4 trainers joined`
-      : state.event.phase === "battle"
-        ? `Turn ${state.event.turn}`
-        : state.event.winnerId === state.playerId
-          ? "You won the battle!"
-          : "Battle finished";
+  statusText.textContent = getStatusText(state.event, state.playerId);
 
   readyButton.disabled = !currentPlayer?.pokemon || state.event.phase !== "lobby";
   readyButton.textContent = currentPlayer?.ready ? "I'm not ready" : "I'm ready";
 
-  startButton.classList.toggle("hidden", !isHost || state.event.phase !== "lobby");
-  startButton.disabled = !allReady;
+  startButton.classList.toggle("hidden", !controls.isHost || state.event.phase !== "lobby");
+  startButton.disabled = !controls.allReady;
 
   renderPokemonChoices();
   renderPlayers();
@@ -231,9 +231,7 @@ hostForm.addEventListener("submit", async (event) => {
       },
     });
 
-    state.playerId = payload.playerId;
-    state.eventCode = payload.code;
-    state.event = payload.event;
+    applyEventPayload(state, payload);
     subscribeToEvent(payload.code);
     render();
     setMessage("Event created. Share the event code with players on your network.");
@@ -255,9 +253,7 @@ joinForm.addEventListener("submit", async (event) => {
       },
     });
 
-    state.playerId = payload.playerId;
-    state.eventCode = payload.code;
-    state.event = payload.event;
+    applyEventPayload(state, payload);
     subscribeToEvent(payload.code);
     render();
     setMessage("Joined the event.");
@@ -273,17 +269,17 @@ readyButton.addEventListener("click", async () => {
     return;
   }
 
-  const newReadyValue = !currentPlayer.ready;
+  const readyToggle = getReadyToggle(currentPlayer);
 
   try {
     await request(`/api/events/${state.eventCode}/ready`, {
       method: "POST",
       body: {
         playerId: state.playerId,
-        ready: newReadyValue,
+        ready: readyToggle.newReadyValue,
       },
     });
-    setMessage(newReadyValue ? "You are ready to battle." : "You are no longer ready.");
+    setMessage(readyToggle.message);
   } catch (error) {
     setMessage(error.message);
   }
@@ -306,7 +302,7 @@ startButton.addEventListener("click", async () => {
 async function init() {
   try {
     const payload = await request("/api/pokemon");
-    state.pokemonCatalog = payload.pokemon;
+    applyCatalogPayload(state, payload);
     render();
   } catch (error) {
     setMessage(error.message);
