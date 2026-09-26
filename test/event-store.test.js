@@ -57,6 +57,22 @@ test("only the host can start the battle", () => {
   );
 });
 
+test("starting with a non-member player id is rejected", () => {
+  const store = new EventStore();
+  const hosted = store.createEvent("Red");
+  const joined = store.joinEvent(hosted.code, "Blue");
+
+  store.choosePokemon(hosted.code, hosted.playerId, "Charmander");
+  store.choosePokemon(hosted.code, joined.playerId, "Squirtle");
+  store.setReady(hosted.code, hosted.playerId, true);
+  store.setReady(hosted.code, joined.playerId, true);
+
+  assert.throws(
+    () => store.startBattle(hosted.code, "missing-player"),
+    /Player not found for this event/,
+  );
+});
+
 test("the host cannot start until every player is ready", () => {
   const store = new EventStore();
   const hosted = store.createEvent("Red");

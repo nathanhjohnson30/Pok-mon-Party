@@ -151,7 +151,7 @@ async function handleApi(request, response, url) {
     return;
   }
 
-  throw new Error("API route not found.");
+  throw createClientError("API route not found.", 404);
 }
 
 const server = http.createServer(async (request, response) => {

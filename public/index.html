@@ -65,8 +65,18 @@
             ></div>
             <div class="actions">
               <button id="ready-button" type="button" disabled>I'm ready</button>
-              <button id="start-button" type="button" class="secondary hidden">Start battle</button>
+              <button
+                id="start-button"
+                type="button"
+                class="secondary hidden"
+                aria-describedby="start-help"
+              >
+                Start battle
+              </button>
             </div>
+            <p id="start-help" class="meta">
+              Only the host can start the battle, and the button unlocks once every trainer is ready.
+            </p>
           </section>
 
           <section class="stack">
