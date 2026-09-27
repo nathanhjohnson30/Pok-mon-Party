@@ -769,8 +769,8 @@
                 <img id="detSprite" class="sprite-img habitat-draggable" src="">
             </div>
             <div id="detAiBackgroundControls" style="display:none; width:100%; gap:4px;">
-                <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground(1)" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
-                <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground(1)" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
+                <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground()" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
+                <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground()" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
             </div>
             <div id="detInfoContainer" class="retro-box">
                 <p id="detType"><strong>TYPE:</strong> ---</p>
@@ -2371,11 +2371,10 @@
             const button = document.getElementById('detAiBackgroundBtn');
             const saveButton = document.getElementById('detSaveBackgroundBtn');
             const panel = document.getElementById('detHabitatPanel');
-            const isBulbasaur = Number(pokemon?.id) === 1;
-            const visible = devToolsEnabled && isBulbasaur;
+            const visible = devToolsEnabled && Number(pokemon?.id) >= 1 && Number(pokemon?.id) <= 151;
             if(controls) controls.style.display = visible ? 'flex' : 'none';
             if(!visible || !panel) return;
-            const savedUrl = getSavedPokedexAiBackgrounds()['1'];
+            const savedUrl = getSavedPokedexAiBackgrounds()[String(pokemon.id)];
             if(savedUrl) {
                 panel.dataset.aiBackgroundUrl = savedUrl;
                 panel.style.setProperty('--pokemon-bg', `url("${savedUrl}")`);
@@ -2389,26 +2388,36 @@
             }
         }
 
-        function generatePokedexAiBackground(pokemonId) {
-            if(Number(pokemonId) !== 1) return;
+        function generatePokedexAiBackground(pokemonId = masterGen1[currentPokedexIndex]?.id) {
+            const selectedId = Number(pokemonId);
             const panel = document.getElementById('detHabitatPanel');
             const button = document.getElementById('detAiBackgroundBtn');
             const saveButton = document.getElementById('detSaveBackgroundBtn');
-            const pokemon = masterGen1.find(entry => entry.id === 1);
-            if(!devToolsEnabled || !panel || !button || !pokemon) return;
+            const pokemon = masterGen1.find(entry => entry.id === selectedId);
+            if(!devToolsEnabled || !panel || !button || !pokemon || selectedId < 1 || selectedId > 151) return;
             button.disabled = true;
             if(saveButton) saveButton.disabled = true;
             button.innerText = '✨ GENERATING...';
-            const sceneVariations = [
-                'a dawn-lit fern valley after a light rain',
-                'a warm greenhouse hidden deep in an ancient forest',
-                'a mossy streambank with giant leaves and tiny flowers',
-                'a misty jungle floor beneath broad tropical plants',
-                'a peaceful woodland garden with sunbeams through the canopy'
-            ];
-            const sceneVariation = sceneVariations[Math.floor(Math.random() * sceneVariations.length)];
+            const habitatScenes = {
+                CAVE: ['a crystal-lit cave mouth with damp stone and hanging moss', 'a deep cavern with reflective pools and soft shafts of light', 'a shadowy cave chamber with glowing minerals and layered rock'],
+                FOREST: ['an ancient forest clearing filled with ferns and filtered sunlight', 'a mossy woodland path beneath enormous leaves', 'a quiet grove with tangled roots, flowers, and drifting pollen'],
+                GRASSLAND: ['a wide meadow of tall grass beneath a bright open sky', 'a rolling field with wildflowers and warm late-afternoon light', 'a sheltered prairie hollow with seed heads moving in the breeze'],
+                MOUNTAIN: ['a high mountain terrace with wind-shaped grasses and distant peaks', 'a rocky hillside dotted with hardy plants beneath crisp sunlight', 'a quiet alpine pass with stone, mist, and dramatic cloud light'],
+                ROUGH_TERRAIN: ['a rugged red-earth trail scattered with stones and tough brush', 'a dry scrubland with cracked ground and hardy wild plants', 'a windswept rocky plain beneath a broad changing sky'],
+                SEA: ['a calm coastal inlet with clear water, reeds, and sunlit rocks', 'a deep underwater reef with drifting plants and shafts of blue light', 'a rocky shoreline with tide pools, sea foam, and a glowing horizon'],
+                URBAN: ['a quiet city garden reclaiming an old courtyard', 'a sunlit rooftop greenhouse surrounded by distant buildings', 'an overgrown alley with vines, puddles, and warm reflected light'],
+                WATERS_EDGE: ['a lush riverbank with reeds, smooth stones, and shallow water', 'a quiet pond edge surrounded by broad leaves and dragonflies', 'a misty lakeshore with wet roots, cattails, and soft morning light']
+            };
+            const fallbackScenes = ['a peaceful wilderness clearing with layered plants and soft light', 'a dramatic natural vista with rich textures and a clear focal space', 'a hidden habitat discovered beyond a winding trail'];
+            const habitat = getPokemonHabitat(pokemon);
+            const scenePool = habitatScenes[habitat] || fallbackScenes;
+            const sceneVariation = scenePool[Math.floor(Math.random() * scenePool.length)];
+            const lightingVariations = ['gentle sunrise light', 'bright midday light', 'warm golden-hour light', 'cool blue twilight', 'soft misty overcast light'];
+            const compositionVariations = ['wide environmental concept art with open space around the center', 'low ground-level perspective with strong foreground detail', 'layered depth from foreground plants to a distant horizon', 'slightly elevated naturalist view with a clear habitat layout'];
+            const lighting = lightingVariations[Math.floor(Math.random() * lightingVariations.length)];
+            const composition = compositionVariations[Math.floor(Math.random() * compositionVariations.length)];
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
-            const prompt = `A lush, cinematic Bulbasaur habitat for a handheld RPG Pokedex entry: ${pokemon.flavor}. Bulbasaur is a small blue-green quadruped Pokemon with a leafy seed on its back, in ${sceneVariation}. Include broad leaves, moss, ferns, soft natural light, and a calm sense of discovery. No text, no logos, no other creatures, no battle arena, no visible Pokemon silhouette besides Bulbasaur's implied habitat. Rich greens with gentle blue accents, detailed but calm, wide composition. ${pokemon.type} type, ${getPokemonHabitat(pokemon)} habitat.`;
+            const prompt = `A distinctive habitat background for a handheld RPG Pokedex entry about ${pokemon.name}: ${pokemon.flavor}. The creature is a ${pokemon.type} type Pokemon associated with a ${habitat} habitat. Show ${sceneVariation}, with ${lighting}. Use ${composition}. The image should suggest what this species would naturally live in without showing the Pokemon itself. No text, no logos, no other creatures, no battle arena, no character silhouettes. Make the palette, weather, vegetation, geology, and atmosphere feel specific to this species rather than generic fantasy scenery.`;
             const image = new Image();
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=bulbasaur-pokedex-${generationToken}`;
             image.onload = () => {
@@ -2428,17 +2437,18 @@
             image.src = imageUrl;
         }
 
-        function savePokedexAiBackground(pokemonId) {
-            if(Number(pokemonId) !== 1 || !devToolsEnabled) return;
+        function savePokedexAiBackground(pokemonId = masterGen1[currentPokedexIndex]?.id) {
+            const selectedId = Number(pokemonId);
+            if(selectedId < 1 || selectedId > 151 || !devToolsEnabled) return;
             const panel = document.getElementById('detHabitatPanel');
             const saveButton = document.getElementById('detSaveBackgroundBtn');
             const url = panel?.dataset.aiBackgroundUrl;
-            if(!url) return showToast('Generate a Bulbasaur background before saving it.');
+            if(!url) return showToast(`Generate a ${masterGen1.find(entry => entry.id === selectedId)?.name || 'Pokemon'} background before saving it.`);
             const saved = getSavedPokedexAiBackgrounds();
-            saved['1'] = url;
+            saved[String(selectedId)] = url;
             localStorage.setItem('firered_pokedex_ai_backgrounds', JSON.stringify(saved));
             if(saveButton) saveButton.innerText = '💾 SAVED BACKGROUND';
-            showToast('Bulbasaur background saved for this browser.');
+            showToast(`${masterGen1.find(entry => entry.id === selectedId)?.name || 'Pokemon'} background saved for this browser.`);
         }
 
         function fitBattleSprite(sprite, pokemon, role) {
