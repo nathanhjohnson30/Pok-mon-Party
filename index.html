@@ -1132,6 +1132,17 @@
 
         window.addEventListener('keydown', (e) => {
             const activeView = document.querySelector('.sub-view.active').id;
+            const isResizeKey = e.key === '+' || e.key === '-' || (e.shiftKey && (e.key === '=' || e.key === '_'));
+            const isTextEntry = e.target instanceof HTMLElement
+                && (e.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName));
+            if(isResizeKey && !isTextEntry) {
+                const hoveredSprite = document.querySelector('img.sprite-img:hover');
+                const sprite = hoveredSprite || (keyboardResizeSprite?.isConnected && keyboardResizeSprite.getClientRects().length ? keyboardResizeSprite : null);
+                if(sprite && spriteDragEnabled) {
+                    resizeSprite(sprite, e.key === '+' || e.key === '=' ? 1 : -1);
+                    e.preventDefault();
+                }
+            }
             
             if (e.key === 'Escape') {
                 const wildIntroActive = activeView === 'battleView' && activeOpponentTrainer === 'WILD' && document.getElementById('battleIntroCard').style.display === 'block';
@@ -2612,6 +2623,7 @@
         }
 
         let spriteDragEnabled = true;
+        let keyboardResizeSprite = null;
         let draggedSprite = null;
         let draggedSpriteElement = null;
         let spriteDragPointerId = null;
@@ -2624,6 +2636,10 @@
 
         document.addEventListener('pointerdown', handleSpritePointerDown);
         document.addEventListener('wheel', handleSpriteWheel, { passive:false });
+        document.addEventListener('pointerover', event => {
+            const sprite = event.target.closest?.('img.sprite-img');
+            if(sprite) keyboardResizeSprite = sprite;
+        });
 
         function handleSpritePointerDown(event) {
             const sprite = event.target.closest('img.sprite-img');
@@ -2633,38 +2649,57 @@
         function handleSpriteWheel(event) {
             const sprite = event.target.closest('img.sprite-img');
             if(!sprite || !spriteDragEnabled) return;
+            resizeSprite(sprite, event.deltaY < 0 ? 1 : -1, event);
+        }
+
+        function resizeSprite(sprite, direction, event = null) {
+            if(!sprite || !spriteDragEnabled) return;
             ensureSpritePositionKey(sprite);
             if(sprite.closest('.battle-sprites')) {
                 const currentScale = Number(sprite.dataset.dragScale || sprite.style.getPropertyValue('--sprite-user-scale') || 1);
-                const nextScale = Math.min(1.8, Math.max(0.55, currentScale + (event.deltaY < 0 ? 0.1 : -0.1)));
+                const nextScale = Math.min(1.8, Math.max(0.55, currentScale + direction * 0.1));
                 sprite.dataset.dragScale = nextScale;
                 sprite.style.setProperty('--sprite-user-scale', nextScale);
                 const saved = spritePositions.get(sprite.dataset.positionKey) || {};
                 spritePositions.set(sprite.dataset.positionKey, { ...saved, scale: nextScale });
                 localStorage.setItem('firered_sprite_positions', JSON.stringify(Object.fromEntries(spritePositions)));
-                event.preventDefault();
+                event?.preventDefault();
                 return;
             }
             const habitat = sprite.closest('.pokemon-habitat');
             const defaultScale = habitat ? Number(habitat.style.getPropertyValue('--habitat-sprite-scale')) || 1.7 : 1;
             const currentScale = Number(sprite.dataset.dragScale || defaultScale);
-            const scaleChange = event.deltaY < 0 ? 0.1 : -0.1;
-            const nextScale = Math.min(4, Math.max(0.3, currentScale + scaleChange));
+            const nextScale = Math.min(4, Math.max(0.3, currentScale + direction * 0.1));
             sprite.dataset.dragScale = nextScale;
             const isPositioned = sprite.style.top || sprite.style.left;
-            sprite.style.transform = isPositioned
-                ? `translate(-50%, -50%) scale(${nextScale})`
-                : `translateX(-50%) scale(${nextScale})`;
+            if(isPositioned) {
+                sprite.style.transform = `translate(-50%, -50%) scale(${nextScale})`;
+            } else if(habitat) {
+                sprite.style.transform = `translateX(-50%) scale(${nextScale})`;
+            } else {
+                const baseTransform = sprite.style.transform.replace(/\s*scale\([^)]*\)/g, '').trim();
+                sprite.style.transform = `${baseTransform} scale(${nextScale})`.trim();
+            }
             spritePositions.set(sprite.dataset.positionKey, {
                 left: sprite.style.left,
                 top: sprite.style.top,
                 transform: sprite.style.transform
             });
             localStorage.setItem('firered_sprite_positions', JSON.stringify(Object.fromEntries(spritePositions)));
-            event.preventDefault();
+            event?.preventDefault();
+        }
+
+        function captureSpriteBaseStyle(sprite) {
+            if(sprite.dataset.baseStyleCaptured) return;
+            sprite.dataset.baseLeft = sprite.style.left;
+            sprite.dataset.baseTop = sprite.style.top;
+            sprite.dataset.baseBottom = sprite.style.bottom;
+            sprite.dataset.baseTransform = sprite.style.transform;
+            sprite.dataset.baseStyleCaptured = 'true';
         }
 
         function setSpritePosition(sprite, positionKey) {
+            captureSpriteBaseStyle(sprite);
             sprite.dataset.positionKey = positionKey;
             sprite.dataset.positionSource = sprite.getAttribute('src') || '';
             const savedPosition = spritePositions.get(positionKey);
@@ -2689,10 +2724,10 @@
                 if(savedPosition.scale) sprite.dataset.dragScale = savedPosition.scale;
                 if(savedPosition.scale) sprite.style.setProperty('--sprite-user-scale', savedPosition.scale);
             } else {
-                sprite.style.left = '';
-                sprite.style.top = '';
-                sprite.style.bottom = '';
-                sprite.style.transform = '';
+                sprite.style.left = sprite.dataset.baseLeft || '';
+                sprite.style.top = sprite.dataset.baseTop || '';
+                sprite.style.bottom = sprite.dataset.baseBottom || '';
+                sprite.style.transform = sprite.dataset.baseTransform || '';
                 sprite.dataset.dragScale = '';
                 sprite.style.removeProperty('--sprite-user-scale');
                 if(sprite.closest('.battle-sprites') && sprite.id === 'activeOppSprite') {
@@ -2705,9 +2740,19 @@
 
         function ensureSpritePositionKey(sprite) {
             const source = sprite.getAttribute('src') || '';
-            if(!sprite.dataset.dragIdentity) sprite.dataset.dragIdentity = `sprite-${++spriteIdentityCounter}`;
+            if(!sprite.dataset.dragIdentity) sprite.dataset.dragIdentity = `sprite-${sprite.dataset.positionId || sprite.id || ++spriteIdentityCounter}`;
+            captureSpriteBaseStyle(sprite);
             if(!sprite.dataset.positionKey || sprite.dataset.positionSource !== source) {
-                setSpritePosition(sprite, `${sprite.dataset.dragIdentity}:${source}`);
+                const positionKey = `${sprite.dataset.dragIdentity}:${source}`;
+                if(!spritePositions.has(positionKey) && sprite.dataset.positionId) {
+                    const legacyEntry = [...spritePositions.entries()].find(([key]) => key.endsWith(`:${source}`) && /^sprite-\d+:/.test(key));
+                    if(legacyEntry) {
+                        spritePositions.set(positionKey, legacyEntry[1]);
+                        spritePositions.delete(legacyEntry[0]);
+                        localStorage.setItem('firered_sprite_positions', JSON.stringify(Object.fromEntries(spritePositions)));
+                    }
+                }
+                setSpritePosition(sprite, positionKey);
             }
         }
 
@@ -2717,6 +2762,10 @@
             });
         });
         spritePositionObserver.observe(document.documentElement, { subtree:true, attributes:true, attributeFilter:['src'] });
+        document.querySelectorAll('#oakTrainerSprite, #eeveeSprite').forEach(sprite => {
+            sprite.dataset.positionId = sprite.id;
+            ensureSpritePositionKey(sprite);
+        });
 
         function startSpriteDrag(event) {
             if(!spriteDragEnabled) return;
