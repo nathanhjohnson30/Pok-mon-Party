@@ -2358,7 +2358,7 @@
 
         function getSavedPokedexAiBackgrounds() {
             try {
-                const saved = JSON.parse(localStorage.getItem('firered_pokedex_ai_backgrounds') || '{}');
+                const saved = JSON.parse(localStorage.getItem('firered_pokedex_ai_backgrounds_v3') || '{}');
                 return saved && typeof saved === 'object' ? saved : {};
             } catch(error) {
                 return {};
@@ -2409,7 +2409,8 @@
             };
             const fallbackScenes = ['a peaceful wilderness clearing with layered plants and soft light', 'a dramatic natural vista with rich textures and a clear focal space', 'a hidden habitat discovered beyond a winding trail'];
             const habitat = getPokemonHabitat(pokemon);
-            const scenePool = habitatScenes[habitat] || fallbackScenes;
+            const habitatKey = String(habitat).replace(/-/g, '_');
+            const scenePool = habitatScenes[habitatKey] || fallbackScenes;
             const sceneVariation = scenePool[Math.floor(Math.random() * scenePool.length)];
             const lightingVariations = ['gentle sunrise light', 'bright midday light', 'warm golden-hour light', 'cool blue twilight', 'soft misty overcast light'];
             const compositionVariations = ['wide environmental concept art with open space around the center', 'low ground-level perspective with strong foreground detail', 'layered depth from foreground plants to a distant horizon', 'slightly elevated naturalist view with a clear habitat layout'];
@@ -2431,10 +2432,18 @@
             };
             const primaryType = String(pokemon.type || 'NORMAL').split('/')[0].toUpperCase();
             const environmentDetails = typeEnvironmentDetails[primaryType] || typeEnvironmentDetails.NORMAL;
+            const habitatRequirements = {
+                WATERS_EDGE: 'Water must occupy at least half of the image: a clear pond, lake edge, riverbank, or shallow coastal inlet with visible water surface. Keep land secondary. Do not make this a forest clearing, dry field, or landlocked scene.',
+                SEA: 'Open water must dominate the image: a coastal inlet, reef, ocean shallows, or underwater environment. Do not make this a forest or dry-land scene.',
+                CAVE: 'Rock and cavern structure must dominate the image. Do not show furniture, buildings, or a normal outdoor forest.',
+                FOREST: 'Dense natural woodland must dominate the image, with no buildings, rooms, beds, furniture, or urban objects.',
+                GRASSLAND: 'Open meadow or prairie must dominate the image, not dense forest, rooms, or buildings.'
+            };
+            const habitatRequirement = habitatRequirements[habitatKey] || 'Make the mapped natural habitat unmistakable and dominant in the image.';
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
-            const prompt = `EMPTY ENVIRONMENT BACKGROUND PLATE ONLY. Create a scenic location, not a character illustration. Ecological notes: ${pokemon.flavor}. This is a ${pokemon.type} type species associated with a ${habitat} habitat. Show only ${sceneVariation}, with ${lighting}. Use ${composition}. Include ${environmentDetails}. Do not depict the species, any Pokemon, any animal, or any living subject. The center and foreground must contain scenery only for a Pokedex display.`;
+            const prompt = `EMPTY SCENERY-ONLY BACKGROUND PLATE. Generate only a natural landscape with no subjects. Habitat category: ${habitat}. ${habitatRequirement} Scene: ${sceneVariation}. Lighting: ${lighting}. Composition: ${composition}. Environmental details: ${environmentDetails}. This is a clean empty background for a game UI. Do not depict any Pokemon, animal, monster, person, character, creature, silhouette, face, eyes, or living subject anywhere in the image.`;
             const image = new Image();
-            const negativePrompt = 'Pokemon, animals, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, text, logos, battle arena';
+            const negativePrompt = 'all Pokemon, Squirtle, Blastoise, Charmander, Bulbasaur, animals, fish, birds, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, forest, trees, text, labels, captions, logos, tags, badges, signatures, watermark, battle arena, bedroom, furniture, buildings, other subjects, photorealistic, 3D render';
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=pokedex-habitat-${selectedId}-${generationToken}&negative_prompt=${encodeURIComponent(negativePrompt)}`;
             image.onload = () => {
                 panel.dataset.aiBackgroundUrl = imageUrl;
@@ -2462,7 +2471,7 @@
             if(!url) return showToast(`Generate a ${masterGen1.find(entry => entry.id === selectedId)?.name || 'Pokemon'} background before saving it.`);
             const saved = getSavedPokedexAiBackgrounds();
             saved[String(selectedId)] = url;
-            localStorage.setItem('firered_pokedex_ai_backgrounds', JSON.stringify(saved));
+            localStorage.setItem('firered_pokedex_ai_backgrounds_v3', JSON.stringify(saved));
             if(saveButton) saveButton.innerText = '💾 SAVED BACKGROUND';
             showToast(`${masterGen1.find(entry => entry.id === selectedId)?.name || 'Pokemon'} background saved for this browser.`);
         }
