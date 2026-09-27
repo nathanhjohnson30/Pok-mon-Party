@@ -296,6 +296,13 @@
             background: rgba(0, 0, 0, 0.85); z-index: 100; justify-content: center; align-items: center;
             box-sizing: border-box; padding: 20px; flex-direction: column;
         }
+        #battleTutorialOverlay { z-index:2500; background:rgba(10,16,20,.88); }
+        .battle-tutorial-card { width:min(100%,360px); border-color:#507657; box-shadow:0 8px 24px rgba(0,0,0,.55); }
+        .battle-tutorial-card h3 { margin:4px 0 8px; color:var(--highlight); }
+        .battle-tutorial-card p { margin:6px 0 12px; font-size:.88rem; line-height:1.45; }
+        .battle-tutorial-step { font-size:.7rem; opacity:.7; margin:0 0 8px; }
+        .battle-tutorial-actions { display:flex; gap:8px; width:100%; }
+        .battle-tutorial-actions button { flex:1; margin:0; padding:8px 4px; font-size:.78rem; }
 
         .action-menu {
             display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -1013,6 +1020,18 @@
             <button class="retro-btn back-btn" id="battleBackBtn" onclick="openView('mainMenuView', true)" style="margin-top: 8px;">◀ BACK [Esc]</button>
         </div>
 
+        <div id="battleTutorialOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="battleTutorialTitle">
+            <div class="retro-box center-content battle-tutorial-card">
+                <h3 id="battleTutorialTitle">BATTLE TUTORIAL</h3>
+                <p id="battleTutorialStep" class="battle-tutorial-step"></p>
+                <p id="battleTutorialMessage" aria-live="polite"></p>
+                <div class="battle-tutorial-actions">
+                    <button class="retro-btn" onclick="skipBattleTutorial()" style="background:#777;">SKIP</button>
+                    <button id="battleTutorialNextBtn" class="retro-btn" onclick="advanceBattleTutorial()" style="background:#38704a;">NEXT</button>
+                </div>
+            </div>
+        </div>
+
         <!-- TRADE -->
         <div id="tradeView" class="sub-view">
             <h3>🔄 TRADE</h3>
@@ -1174,6 +1193,11 @@
             }
             
             if (e.key === 'Escape') {
+                if(battleTutorialActive) {
+                    skipBattleTutorial();
+                    e.preventDefault();
+                    return;
+                }
                 const wildIntroActive = activeView === 'battleView' && activeOpponentTrainer === 'WILD' && document.getElementById('battleIntroCard').style.display === 'block';
                 const starterSelectionActive = activeView === 'partyView' && partyTeam.length === 0;
                 if (activeView !== 'mainMenuView' && !wildIntroActive && !starterSelectionActive) openView('mainMenuView', true);
@@ -2175,6 +2199,7 @@
         let trainerName = "RED", trainerIdNo = "00000";
         let adultModeActive = false, expMultiplierActive = false, eventTimerActive = true, healStationActive = false;
         let firstLoad = true, gameStarted = false;
+        let battleTutorialSeen = false, battleTutorialStepIndex = 0, battleTutorialActive = false;
         let selectedPartyIndex = null, switchSourceIndex = null, previewStarter = null, starterOptions = [], starterChancesRemaining = 3, selectedBagItemKey = null;
         let starterSceneChoiceIndex = -1, starterThreeScene = null, starterThreeCamera = null, starterThreeRenderer = null, starterTableResizeObserver = null;
         let starterThreeBalls = [], starterRaycaster = null, starterPointer = null;
@@ -2250,7 +2275,7 @@
             localStorage.setItem('firered_party_save', JSON.stringify({ 
                 partyTeam, pcStorage, pokedexSeen, totalWins, totalLosses, trainerMoney,
                 bagInventory, ballInventory, tmCaseList, rivalHistory, trainerName, trainerIdNo, 
-                starterChancesRemaining, eliteFourIndex, firstLoad, gameStarted, nextEncounterTime, 
+                starterChancesRemaining, eliteFourIndex, firstLoad, gameStarted, battleTutorialSeen, nextEncounterTime,
                 teamRocketVaultStorage, giovanniGlobalHp, adultModeActive, expMultiplierActive, eventTimerActive, healStationActive, encounteredLegendaries 
             }));
             const roster = JSON.parse(localStorage.getItem('firered_party_roster') || '{}');
@@ -2289,6 +2314,7 @@
                 rivalHistory = d.rivalHistory || []; trainerName = d.trainerName || "RED"; trainerIdNo = d.trainerIdNo || "00000";
                 starterChancesRemaining = d.starterChancesRemaining ?? 3; eliteFourIndex = d.eliteFourIndex || 0;
                 firstLoad = d.firstLoad ?? true; gameStarted = d.gameStarted ?? false;
+                battleTutorialSeen = d.battleTutorialSeen ?? false;
                 nextEncounterTime = d.nextEncounterTime || (Date.now() + randomEncounterDelay());
                 teamRocketVaultStorage = d.teamRocketVaultStorage || null;
                 giovanniGlobalHp = d.giovanniGlobalHp ?? 100000;
@@ -4170,6 +4196,50 @@
 
         function acceptBattleInvite() { document.getElementById('battleInviteModal').style.display = 'none'; startMultiplayerBattle(activeOpponentTrainer, false); }
         function declineBattleInvite() { document.getElementById('battleInviteModal').style.display = 'none'; activeOpponentTrainer = null; }
+
+        function renderBattleTutorialStep() {
+            const lessons = [
+                { title:'BATTLE GOAL', message:'Battles are turn-based. Reduce the opposing Pokémon\'s HP to zero to win.' },
+                { title:'CHOOSE A MOVE', message:'Press FIGHT and pick a move. Check its type, power, and accuracy; type advantages can deal extra damage.' },
+                { title:'OTHER ACTIONS', message:'BAG uses items, POKéMON switches your active partner, and RUN attempts to escape a wild battle. Choose one action each turn.' }
+            ];
+            const lesson = lessons[battleTutorialStepIndex];
+            document.getElementById('battleTutorialTitle').innerText = lesson.title;
+            document.getElementById('battleTutorialStep').innerText = `LESSON ${battleTutorialStepIndex + 1} / ${lessons.length}`;
+            document.getElementById('battleTutorialMessage').innerText = lesson.message;
+            document.getElementById('battleTutorialNextBtn').innerText = battleTutorialStepIndex === lessons.length - 1 ? 'START BATTLE' : 'NEXT';
+        }
+
+        function showBattleTutorialIfNeeded() {
+            if(battleTutorialSeen || battleTutorialActive) return;
+            battleTutorialActive = true;
+            battleTutorialStepIndex = 0;
+            renderBattleTutorialStep();
+            document.getElementById('battleTutorialOverlay').style.display = 'flex';
+            document.getElementById('battleTutorialNextBtn').focus();
+        }
+
+        function finishBattleTutorial() {
+            if(!battleTutorialActive) return;
+            battleTutorialActive = false;
+            battleTutorialSeen = true;
+            document.getElementById('battleTutorialOverlay').style.display = 'none';
+            saveGameData();
+        }
+
+        function advanceBattleTutorial() {
+            if(!battleTutorialActive) return;
+            if(battleTutorialStepIndex < 2) {
+                battleTutorialStepIndex++;
+                renderBattleTutorialStep();
+                return;
+            }
+            finishBattleTutorial();
+        }
+
+        function skipBattleTutorial() {
+            finishBattleTutorial();
+        }
         
         function startMultiplayerBattle(oppName, isE4=false, fixedOpponent = null) {
             if(partyTeam.length === 0) return alert("No POKéMON in party!");
@@ -4194,6 +4264,7 @@
                 document.getElementById('battleIntroCard').style.display = 'none';
                 document.getElementById('activeBattleArena').style.display = 'block';
                 document.getElementById('battleBackBtn').style.display = 'none';
+                showBattleTutorialIfNeeded();
             }, 5000);
         }
 
@@ -5001,6 +5072,7 @@
                 document.getElementById('activeBattleArena').style.display = 'block';
                 const trainerName = nextOpponent.name.split("'s")[0];
                 document.getElementById('battleNarrativeText').innerText = `${trainerName} is sending out ${nextOpponent.opponent.name}!`;
+                showBattleTutorialIfNeeded();
             }, 5000);
             return true;
         }
@@ -5277,6 +5349,7 @@
                 document.getElementById('battleIntroCard').style.display = 'none';
                 document.getElementById('activeBattleArena').style.display = 'block';
                 document.getElementById('battleBackBtn').style.display = 'none';
+                showBattleTutorialIfNeeded();
             }, 5000);
 
             logHostActivity(`Wild encounter spawned: ${sp.name}`);
