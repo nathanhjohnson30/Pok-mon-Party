@@ -2414,8 +2414,24 @@
             const compositionVariations = ['wide environmental concept art with open space around the center', 'low ground-level perspective with strong foreground detail', 'layered depth from foreground plants to a distant horizon', 'slightly elevated naturalist view with a clear habitat layout'];
             const lighting = lightingVariations[Math.floor(Math.random() * lightingVariations.length)];
             const composition = compositionVariations[Math.floor(Math.random() * compositionVariations.length)];
+            const typeEnvironmentDetails = {
+                FIRE: 'volcanic rock, scorched grasses, warm stone, faint heat haze, and small natural embers only',
+                WATER: 'clear water, wet stone, reeds, reflections, and natural ripples',
+                GRASS: 'dense leaves, moss, wildflowers, roots, and layered green vegetation',
+                ELECTRIC: 'storm-lit air, safe distant lightning, wet ground, and subtle natural sparks in the atmosphere',
+                ICE: 'frost, snowfields, pale ice, crystalline surfaces, and cold mist',
+                POISON: 'strange plants, dark wet soil, colored mist, and naturally occurring mineral stains',
+                ROCK: 'layered stone, cliffs, gravel, weathered boulders, and mineral textures',
+                GROUND: 'earth, sand, dry soil, burrows, dust, and natural terrain contours',
+                FLYING: 'open sky, high wind, distant cliffs, clouds, and wide unobstructed space',
+                BUG: 'small plants, leaf litter, bark, flowers, and detailed forest-floor textures',
+                PSYCHIC: 'quiet atmospheric light, unusual rock formations, soft haze, and subtle abstract natural patterns',
+                NORMAL: 'balanced vegetation, soil, rocks, and ordinary peaceful wilderness'
+            };
+            const primaryType = String(pokemon.type || 'NORMAL').split('/')[0].toUpperCase();
+            const environmentDetails = typeEnvironmentDetails[primaryType] || typeEnvironmentDetails.NORMAL;
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
-            const prompt = `Environment-only habitat background inspired by the natural ecology of ${pokemon.name}. Species notes: ${pokemon.flavor}. ${pokemon.name} is a ${pokemon.type} type species associated with a ${habitat} habitat. Show only ${sceneVariation}, with ${lighting}. Use ${composition}. The image must be an empty scenic location for a Pokedex display, with no subject creature present.`;
+            const prompt = `EMPTY ENVIRONMENT BACKGROUND PLATE ONLY. Create a scenic location, not a character illustration. Ecological notes: ${pokemon.flavor}. This is a ${pokemon.type} type species associated with a ${habitat} habitat. Show only ${sceneVariation}, with ${lighting}. Use ${composition}. Include ${environmentDetails}. Do not depict the species, any Pokemon, any animal, or any living subject. The center and foreground must contain scenery only for a Pokedex display.`;
             const image = new Image();
             const negativePrompt = 'Pokemon, animals, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, text, logos, battle arena';
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=pokedex-habitat-${selectedId}-${generationToken}&negative_prompt=${encodeURIComponent(negativePrompt)}`;
