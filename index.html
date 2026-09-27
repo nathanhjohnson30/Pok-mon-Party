@@ -3877,7 +3877,7 @@
                     tmCaseList.forEach(tm => {
                         count++;
                         const tmMove = tmMoveCatalog[tm] || getTmMoveName(tm);
-                        container.innerHTML += `<div class="pokedex-row" onclick="selectTMEntry('${tm}')"><strong>${tm}</strong> <span>TEACH ${tmMove} ▶</span></div>`;
+                        container.innerHTML += `<div class="pokedex-row" onclick="selectTMEntry('${tm}')"><strong>${getTmMachineCode(tm)} ${tmMove}</strong> <span>TEACH ${tmMove} ▶</span></div>`;
                     });
                 }
             } else if(currentBagPocket === 3) {
