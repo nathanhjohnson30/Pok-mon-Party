@@ -2670,10 +2670,13 @@
                 : primaryType === 'FIRE'
                 ? 'habitat-fire'
                 : habitatBackgrounds[pokemon?.habitat] || habitatBackgrounds[habitat?.toLowerCase()] || (habitat === 'FOREST' ? 'habitat-forest' : habitat === 'GRASSLAND' ? 'habitat-grass' : getHabitatClass(type));
-            const backgroundFile = getPokemonBackgroundFile(pokemon || { type });
+            const savedBackground = pokemon?.id ? getSavedPokedexAiBackgrounds()[String(pokemon.id)] : null;
+            const backgroundFile = savedBackground || getPokemonBackgroundFile(pokemon || { type });
             panel.className = `retro-box center-content pokemon-habitat ${habitatClass} has-custom-background`;
             panel.dataset.backgroundKey = `${panelId}:${pokemon?.id || type}`;
             panel.style.setProperty('--habitat-sprite-scale', getHabitatSpriteScale(pokemon));
+            if(savedBackground) panel.dataset.aiBackgroundUrl = savedBackground;
+            else delete panel.dataset.aiBackgroundUrl;
             panel.style.setProperty('--pokemon-bg', `url("${backgroundFile}")`);
             panel.style.setProperty('--pokemon-bg-position', 'center');
             panel.style.setProperty('--pokemon-bg-size', 'cover');
@@ -3192,7 +3195,7 @@
                 : '◀ SWIPE OR USE ARROW KEYS (◄ ►) FOR PARTY POKéMON ▶';
             const sumSprite = document.getElementById('sumSprite');
             sumSprite.src = getPokemonSpriteUrl(poke.id);
-            setSpritePosition(sumSprite, `summary:${source}:${poke.id}:${pokeIndex}`);
+            setSpritePosition(sumSprite, `pokedex:${poke.id}`);
             document.getElementById('sumName').innerHTML = getPokemonNameMarkup(poke); document.getElementById('sumLvl').innerText = `Lv. ${poke.level} (${pokeIndex+1}/${list.length})`;
             document.getElementById('sumTypeInfo').innerText = poke.type; document.getElementById('sumHP').innerText = `${poke.hp} / ${poke.maxHp}`;
             document.getElementById('sumExp').innerText = `${poke.xp}`;
