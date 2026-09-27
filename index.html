@@ -846,7 +846,7 @@
                     <div id="starterBallControls" class="starter-ball-controls" aria-label="Starter Poké Balls"></div>
                 </div>
                 <div id="starterReveal" class="starter-reveal" aria-live="polite"><p class="starter-reveal-placeholder">Choose a ball to see which Pokémon is inside.</p></div>
-                <button class="retro-btn starter-lab-actions" id="confirmStarterBtn" onclick="confirmStarter()" style="background:#b86020;" disabled>CHOOSE THIS STARTER</button>
+                <button class="retro-btn starter-lab-actions" id="confirmStarterBtn" onclick="confirmStarter()" style="background:#b86020; display:none;" disabled>CHOOSE THIS STARTER</button>
             </div>
 
             <div id="partyScreenContainer" style="display:none; flex:1; display:flex; flex-direction:column;">
@@ -2322,11 +2322,11 @@
                 trainerName = inp;
                 trainerIdNo = String(Math.floor(10000 + Math.random() * 90000));
                 document.getElementById('oakInputContainer').style.display = 'none';
-                document.getElementById('oakDialog').innerText = `Wild POKéMON can attack at any time, ${trainerName}. Stay alert!`;
+                document.getElementById('oakDialog').innerText = 'Wild POKéMON can attack at any time. Stay alert!';
                 document.getElementById('oakNextBtn').innerText = 'NEXT ▶';
                 oakStep++;
             } else if (oakStep === 1) {
-                document.getElementById('oakDialog').innerText = `Before your adventure begins, come to my lab and choose your first partner POKéMON, ${trainerName}!`;
+                document.getElementById('oakDialog').innerText = 'Before your adventure begins, come to my lab and choose your first partner POKéMON!';
                 document.getElementById('oakNextBtn').innerText = 'TO THE LAB ▶';
                 oakStep++;
             } else if(oakStep === 2) {
@@ -3274,12 +3274,14 @@
             if(!previewStarter) {
                 reveal.innerHTML = '<p class="starter-reveal-placeholder">Choose a ball to see which Pokémon is inside.</p>';
                 confirmButton.disabled = true;
+                confirmButton.style.display = 'none';
                 return;
             }
             reveal.innerHTML = `<img src="${getPokemonSpriteUrl(previewStarter.id)}" class="sprite-img starter-reveal-sprite" alt="${previewStarter.name}"><div class="starter-reveal-details"><strong>${previewStarter.name}</strong><span>LEVEL 5</span><span class="starter-reveal-type">${previewStarter.type}</span></div>`;
             const sprite = reveal.querySelector('.starter-reveal-sprite');
             setSpritePosition(sprite, `starter-reveal:${previewStarter.id}`);
             confirmButton.disabled = false;
+            confirmButton.style.display = '';
         }
 
         function createStarterWoodTexture() {
