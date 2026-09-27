@@ -2466,11 +2466,14 @@
             button.innerText = '✨ GENERATING...';
             delete panel.dataset.aiBackgroundUrl;
             panel.style.setProperty('--pokemon-bg', `url("${getPokemonBackgroundFile(pokemon)}")`);
+            const primaryType = String(pokemon.type || 'NORMAL').split('/')[0].toUpperCase();
+            const isFirePokemon = primaryType === 'FIRE';
             const habitat = getPokemonHabitat(pokemon);
-            const habitatKey = String(habitat).replace(/-/g, '_');
+            const habitatKey = isFirePokemon ? 'FIRE' : String(habitat).replace(/-/g, '_');
             const habitatDescriptions = {
                 CAVE: 'A deep natural cavern with layered stone, damp walls, hanging moss, crystal minerals, and a small reflective pool. No daylight, furniture, or buildings.',
                 FOREST: 'A dense natural woodland with tall trunks, ferns, moss, tangled roots, filtered sunlight, and a clear empty foreground. No buildings or indoor objects.',
+                FIRE: 'A vivid volcanic foothill: dark basalt, glowing lava cracks, a distant molten flow, sparse scorched grass, and warm rising heat shimmer. Keep the foreground open and unmistakably fire-shaped, not a green meadow or ordinary mountain.',
                 GRASSLAND: 'An open meadow of tall grass, wildflowers, rolling earth, and a broad sky. The scene is spacious and sunlit, with no dense forest or buildings.',
                 MOUNTAIN: 'A rocky mountain terrace with distant peaks, wind-shaped grasses, exposed stone, thin clouds, and crisp highland light.',
                 ROUGH_TERRAIN: 'A rugged red-earth trail with scattered stones, dry brush, dusty ground, and open sky. No furniture or structures.',
@@ -2482,6 +2485,7 @@
             const habitatVariations = {
                 CAVE: ['Add a narrow underground stream and cool blue mineral light.', 'Add warm amber crystal reflections and a shallow stone shelf.', 'Add dripping water, soft mist, and a darker tunnel opening in the distance.'],
                 FOREST: ['Add a small mossy brook and warm sunbeams through the canopy.', 'Add broad prehistoric leaves and damp ground after light rain.', 'Add autumn-colored ground cover with a quiet green understory.'],
+                FIRE: ['Show a distant lava fall illuminating a black-rock valley.', 'Add glowing red fissures across a rugged volcanic shelf and drifting embers.', 'Use a smoldering cinder slope with orange heat haze and sparse charred grass.'],
                 GRASSLAND: ['Add a few scattered boulders and a distant tree line.', 'Add pale wildflowers and a gentle breeze moving the tall grass.', 'Add warm dry earth, seed heads, and low rolling hills.'],
                 MOUNTAIN: ['Add a distant waterfall and cool blue atmospheric haze.', 'Add warm sunset light across the exposed rock faces.', 'Add a high pass with sparse shrubs and thin drifting clouds.'],
                 ROUGH_TERRAIN: ['Add a shallow dry creek bed and sun-baked red stones.', 'Add hardy thorny brush and a distant canyon wall.', 'Add windblown dust, cracked earth, and isolated patches of grass.'],
@@ -2501,7 +2505,7 @@
             localStorage.setItem('firered_pokedex_scene_variations_v1', JSON.stringify(usedVariations));
             const habitatDescription = `${baseHabitatDescription} Subtle variation for this generation: ${variation}`;
             const typeEnvironmentDetails = {
-                FIRE: 'volcanic rock, scorched grasses, warm stone, faint heat haze, and small natural embers only',
+                FIRE: 'black basalt, glowing lava, scorched ground, ember-red cracks, heat shimmer, and warm orange firelight; volcanic features must dominate the scene',
                 WATER: 'clear water, wet stone, reeds, reflections, and natural ripples',
                 GRASS: 'dense leaves, moss, wildflowers, roots, and layered green vegetation',
                 ELECTRIC: 'storm-lit air, safe distant lightning, wet ground, and subtle natural sparks in the atmosphere',
@@ -2514,10 +2518,12 @@
                 PSYCHIC: 'quiet atmospheric light, unusual rock formations, soft haze, and subtle abstract natural patterns',
                 NORMAL: 'balanced vegetation, soil, rocks, and ordinary peaceful wilderness'
             };
-            const primaryType = String(pokemon.type || 'NORMAL').split('/')[0].toUpperCase();
             const environmentDetails = typeEnvironmentDetails[primaryType] || typeEnvironmentDetails.NORMAL;
+            const visualDirection = isFirePokemon
+                ? 'a bold warm palette of ember red, lava orange, molten gold, and charcoal basalt; avoid blue- or green-dominant lighting'
+                : 'warm saturated retro colors with earthy terracotta, rich evergreen, clear sky blue, and soft cream highlights';
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
-            const prompt = `EMPTY SCENERY-ONLY BACKGROUND PLATE. Follow this exact habitat description and do not invent a different setting: ${habitatDescription} Visual direction: Pokemon FireRed and LeafGreen Game Boy Advance environment art, warm saturated retro palette, earthy terracotta, rich evergreen, clear sky blue, soft cream highlights, crisp 2D pixel-art clusters, readable tile-based shapes, compact sprite-compatible shading, and a polished handheld RPG look. Keep the requested image quality and resolution. Add only these environmental details: ${environmentDetails}. This is a clean empty background for a game UI. Do not depict any Pokemon, animal, monster, person, character, creature, silhouette, face, eyes, or living subject anywhere in the image.`;
+            const prompt = `EMPTY SCENERY-ONLY BACKGROUND PLATE. Follow this exact habitat description and do not invent a different setting: ${habitatDescription} Visual direction: Pokemon FireRed and LeafGreen Game Boy Advance environment art, ${visualDirection}, crisp 2D pixel-art clusters, readable tile-based shapes, compact sprite-compatible shading, and a polished handheld RPG look. Keep the requested image quality and resolution. Add only these environmental details: ${environmentDetails}. This is a clean empty background for a game UI. Do not depict any Pokemon, animal, monster, person, character, creature, silhouette, face, eyes, or living subject anywhere in the image.`;
             const image = new Image();
             const negativePrompt = 'all Pokemon, Squirtle, Blastoise, Charmander, Bulbasaur, animals, fish, birds, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, text, labels, captions, logos, tags, badges, signatures, watermark, battle arena, bedroom, furniture, buildings, other subjects, photorealistic, 3D render';
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=pokedex-habitat-${selectedId}-${generationToken}&negative_prompt=${encodeURIComponent(negativePrompt)}`;
@@ -2553,7 +2559,6 @@
             if(saveButton) saveButton.innerText = '💾 SAVED BACKGROUND';
             showToast(`${masterGen1.find(entry => entry.id === selectedId)?.name || 'Pokemon'} background saved for this browser.`);
         }
-
         function fitBattleSprite(sprite, pokemon, role) {
             if(!sprite || !pokemon) return;
             const heightMatch = String(pokemon.ht || '').match(/(\d+)'(?:\s*)(\d+)?/);
