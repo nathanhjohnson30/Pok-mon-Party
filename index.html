@@ -812,7 +812,7 @@
 
         <!-- 3-PAGE SUMMARY -->
         <div id="summaryView" class="sub-view" ontouchstart="handleSummaryTouchStart(event)" ontouchend="handleSummaryTouchEnd(event)">
-            <div id="summarySwipeHint" style="text-align:center; font-size:0.75rem; opacity:0.7; margin-bottom:2px; flex-shrink:0;">◀ SWIPE OR USE ARROW KEYS (◄ ►) FOR PARTY POKéMON ▶</div>
+            <div id="summarySwipeHint" style="text-align:center; font-size:0.75rem; opacity:0.7; margin-bottom:2px; flex-shrink:0;">SWIPE TO BROWSE POKéMON</div>
             <div id="sumHabitatPanel" class="retro-box center-content pokemon-habitat habitat-normal" style="margin-bottom: 8px; flex-shrink:0;">
                 <img id="sumSprite" class="sprite-img habitat-draggable" src="">
             </div>
@@ -3401,9 +3401,7 @@
             const poke = list[pokeIndex];
             setHabitatPanel('sumHabitatPanel', poke.type, poke);
             openView('summaryView', true);
-            document.getElementById('summarySwipeHint').innerText = source === 'pc'
-                ? '◀ SWIPE OR USE ARROW KEYS (◄ ►) FOR PC POKéMON ▶'
-                : '◀ SWIPE OR USE ARROW KEYS (◄ ►) FOR PARTY POKéMON ▶';
+            document.getElementById('summarySwipeHint').innerText = 'SWIPE TO BROWSE POKéMON';
             const sumSprite = document.getElementById('sumSprite');
             sumSprite.src = getPokemonSpriteUrl(poke.id);
             setSpritePosition(sumSprite, `pokedex:${poke.id}`);
