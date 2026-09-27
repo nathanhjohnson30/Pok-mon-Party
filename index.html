@@ -219,7 +219,32 @@
         .dev-toggle-btn { border:2px solid var(--border-color); background:var(--window-border); color:#fff; padding:6px 8px; font-family:inherit; font-size:.7rem; font-weight:bold; cursor:pointer; }
         .dev-toggle-btn:hover { background:var(--highlight); }
         .legendary-raid-card { background-size:cover; background-position:center; background-repeat:no-repeat; background-color:#1a1400; background-blend-mode:soft-light; }
-        #encounterVisualContainer, #starterCard, #eliteFourArenaBox { background-size:cover; background-position:center; background-repeat:no-repeat; background-blend-mode:soft-light; }
+        #encounterVisualContainer, #eliteFourArenaBox { background-size:cover; background-position:center; background-repeat:no-repeat; background-blend-mode:soft-light; }
+        .starter-lab { width:100%; padding-top:8px; gap:6px; }
+        .starter-lab h3 { margin:0 0 2px; }
+        .starter-lab > p { margin:0 0 4px; font-size:.8rem; }
+        .starter-table-scene { position:relative; width:100%; height:250px; flex:0 0 250px; overflow:hidden; background:#dce4d6; }
+        #starterTableCanvas { display:block; width:100%; height:100%; touch-action:manipulation; outline:none; }
+        .starter-ball-controls { position:absolute; inset:0; pointer-events:none; }
+        .starter-ball-controls button { position:absolute; top:68%; width:1px; height:1px; overflow:hidden; padding:0; border:0; clip-path:inset(50%); white-space:nowrap; pointer-events:none; }
+        .starter-ball-controls button:nth-child(1) { left:23%; }
+        .starter-ball-controls button:nth-child(2) { left:50%; }
+        .starter-ball-controls button:nth-child(3) { left:77%; }
+        .starter-ball-controls button:focus-visible { z-index:2; width:auto; height:auto; padding:6px 9px; clip-path:none; border:2px solid #31453a; border-radius:3px; background:#f7f1da; color:#25352d; font:700 .7rem "Courier New",monospace; transform:translateX(-50%); pointer-events:auto; }
+        .starter-ball-controls img { width:22px; height:22px; vertical-align:middle; object-fit:contain; }
+        .starter-table-scene.three-unavailable { display:flex; align-items:center; justify-content:center; background:repeating-linear-gradient(0deg,rgba(73,35,18,.2) 0 2px,transparent 2px 34px),linear-gradient(180deg,#b66d3b 0%,#98532f 72%,#60331f 73%,#744026 100%); }
+        .starter-table-scene.three-unavailable #starterTableCanvas { display:none; }
+        .starter-table-scene.three-unavailable .starter-ball-controls { position:static; display:flex; justify-content:space-evenly; align-items:center; pointer-events:auto; }
+        .starter-table-scene.three-unavailable .starter-ball-controls button { position:static; display:flex; width:auto; height:auto; align-items:center; flex-direction:column; gap:4px; padding:8px; clip-path:none; border:2px solid #402619; border-radius:4px; background:#f7f1da; color:#25352d; font:700 .7rem "Courier New",monospace; pointer-events:auto; }
+        .starter-reveal { display:flex; width:100%; min-height:86px; align-items:center; justify-content:center; gap:14px; box-sizing:border-box; border-top:2px solid var(--row-border); border-bottom:2px solid var(--row-border); }
+        .starter-reveal-placeholder { margin:0 !important; text-align:center; font-size:.8rem !important; opacity:.75; }
+        .starter-reveal-sprite { width:88px; height:88px; object-fit:contain; }
+        .starter-reveal-details { display:flex; flex-direction:column; gap:5px; font-size:.9rem; }
+        .starter-reveal-type { font-size:.74rem; }
+        .starter-lab-actions { width:100%; }
+        .starter-lab-actions .retro-btn { margin-top:0; }
+        .starter-lab-actions .retro-btn:disabled { cursor:not-allowed; opacity:.48; }
+        @media (max-width:360px) { .starter-table-scene { height:220px; flex-basis:220px; } .starter-reveal { min-height:76px; gap:8px; } }
         .battle-field { background-size:cover; background-position:center; background-repeat:no-repeat; background-blend-mode:soft-light; }
         #detInfoContainer { width:100%; text-align:left; font-size:0.85rem; margin:0 0 12px; padding:8px 12px; box-sizing:border-box; }
         #detInfoContainer p { margin:4px 0 !important; }
@@ -529,7 +554,7 @@
                     <img src="offline/ui/eevee.png" id="eeveeSprite" class="sprite-img" style="width: 68px; object-fit:contain; transform: translate(-64px, 18px); margin-left: 0; position: relative;">
                 </div>
                 <div id="oakDialog">
-                    Hello there! Welcome to the world of POKéMON! Welcome to Nathan's party!
+                    Hello there! Welcome to the world of POKéMON! It's great to have you at the party!
                 </div>
                 <div id="oakInputContainer" style="display:none; width:100%; margin-top: 10px;">
                     <input type="text" id="oakNameInput" placeholder="YOUR NAME" maxlength="10" style="text-align: center;">
@@ -813,14 +838,15 @@
 
         <!-- PARTY & PC -->
         <div id="partyView" class="sub-view">
-            <div id="starterSelectionContainer" class="center-content" style="padding-top: 10px;">
-                <h3 style="margin-bottom: 6px;">PROF. OAK's LAB</h3>
-                <p style="font-size: 0.85rem; margin-bottom: 12px;">Draw your starter (Lv. 5)!</p>
-                <div id="starterCard" class="retro-box center-content" style="width: 100%; min-height: 140px;">
-                    <p style="font-size: 0.9rem; font-style: italic; opacity: 0.7;">No starter drawn yet...</p>
+            <div id="starterSelectionContainer" class="center-content starter-lab">
+                <h3>PROF. OAK'S LAB</h3>
+                <p>Open a Poké Ball to see its Pokémon.</p>
+                <div id="starterTableScene" class="starter-table-scene" aria-label="Three Poké Balls on Professor Oak's wooden table">
+                    <canvas id="starterTableCanvas" aria-label="Three clickable Poké Balls on a three-dimensional wooden lab table"></canvas>
+                    <div id="starterBallControls" class="starter-ball-controls" aria-label="Starter Poké Balls"></div>
                 </div>
-                <button class="retro-btn" id="drawStarterBtn" onclick="drawStarterPreview()" style="background:#208020;">🎲 DRAW</button>
-                <button class="retro-btn" id="confirmStarterBtn" onclick="confirmStarter()" style="background:#b86020; display:none;">✨ CHOOSE THIS</button>
+                <div id="starterReveal" class="starter-reveal" aria-live="polite"><p class="starter-reveal-placeholder">Choose a ball to see which Pokémon is inside.</p></div>
+                <button class="retro-btn starter-lab-actions" id="confirmStarterBtn" onclick="confirmStarter()" style="background:#b86020;" disabled>CHOOSE THIS STARTER</button>
             </div>
 
             <div id="partyScreenContainer" style="display:none; flex:1; display:flex; flex-direction:column;">
@@ -830,7 +856,7 @@
                 </div>
                 <div class="retro-box" id="partyContainer" style="flex:1; overflow-y:auto;"></div>
             </div>
-            <button class="retro-btn back-btn" onclick="openView('mainMenuView', true)">◀ MENU [Esc]</button>
+            <button class="retro-btn back-btn" id="partyMenuBtn" onclick="openView('mainMenuView', true)">◀ MENU [Esc]</button>
         </div>
 
         <!-- BAG -->
@@ -1089,6 +1115,10 @@
         </div>
     </div>
 
+    <script type="module">
+        import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+        window.THREE = THREE;
+    </script>
     <script>
         function openView(viewId, pushHistory = true) {
             if (viewId !== 'bagView') {
@@ -1146,7 +1176,8 @@
             
             if (e.key === 'Escape') {
                 const wildIntroActive = activeView === 'battleView' && activeOpponentTrainer === 'WILD' && document.getElementById('battleIntroCard').style.display === 'block';
-                if (activeView !== 'mainMenuView' && !wildIntroActive) openView('mainMenuView', true);
+                const starterSelectionActive = activeView === 'partyView' && partyTeam.length === 0;
+                if (activeView !== 'mainMenuView' && !wildIntroActive && !starterSelectionActive) openView('mainMenuView', true);
             }
 
             if (activeView === 'mainMenuView') {
@@ -2131,7 +2162,8 @@
             tmMoves: ['Toxic', 'Bullet Seed', 'Hidden Power', 'Sunny Day', 'Protect', 'Giga Drain', 'Frustration', 'Solar Beam', 'Return', 'Double Team', 'Sludge Bomb', 'Facade', 'Secret Power', 'Rest', 'Attract', 'Cut', 'Flash', 'Rock Smash']
         });
 
-        const starterPool = masterGen1.filter(p => !evolvedAndLegendaryIds.includes(p.id));
+        const rareStarterIds = [113, 115, 123, 127, 128, 131, 133, 137, 138, 140, 142, 144, 145, 146, 147, 150, 151];
+        const starterPool = masterGen1.filter(p => !evolvedAndLegendaryIds.includes(p.id) && !rareStarterIds.includes(p.id));
 
         let partyTeam = []; 
         let pcStorage = []; 
@@ -2144,7 +2176,9 @@
         let trainerName = "RED", trainerIdNo = "00000";
         let adultModeActive = false, expMultiplierActive = false, eventTimerActive = true, healStationActive = false;
         let firstLoad = true, gameStarted = false;
-        let selectedPartyIndex = null, switchSourceIndex = null, previewStarter = null, starterChancesRemaining = 3, selectedBagItemKey = null;
+        let selectedPartyIndex = null, switchSourceIndex = null, previewStarter = null, starterOptions = [], starterChancesRemaining = 3, selectedBagItemKey = null;
+        let starterSceneChoiceIndex = -1, starterThreeScene = null, starterThreeCamera = null, starterThreeRenderer = null, starterTableResizeObserver = null;
+        let starterThreeBalls = [], starterRaycaster = null, starterPointer = null;
         let activeOpponentTrainer = null, currentBattleOpponentPokemon = null, opponentHp = 100, isEliteFourBattleSession = false;
         let battleParticipants = [];
         let battleActivePokemon = null;
@@ -2267,8 +2301,13 @@
                 applyTrainerCardDetails();
             }
             if(firstLoad) {
+                document.getElementById('oakDialog').innerText = `Hello there! Welcome to the world of POKéMON! It's great to have you at ${trainerName}'s party!`;
+                document.getElementById('oakNextBtn').innerText = 'NEXT ▶';
                 document.getElementById('oakTutorialOverlay').style.display = 'flex';
                 document.getElementById('oakInputContainer').style.display = 'block';
+            } else if(partyTeam.length && !gameStarted) {
+                openView('mainMenuView', false);
+                showOakFinalIntro();
             } else {
                 openView('mainMenuView', false);
             }
@@ -2283,18 +2322,36 @@
                 trainerName = inp;
                 trainerIdNo = String(Math.floor(10000 + Math.random() * 90000));
                 document.getElementById('oakInputContainer').style.display = 'none';
-                document.getElementById('oakDialog').innerText = `Right! So your name is ${trainerName}! During this party, wild POKéMON can strike at any time!`;
+                document.getElementById('oakDialog').innerText = `Wild POKéMON can attack at any time, ${trainerName}. Stay alert!`;
+                document.getElementById('oakNextBtn').innerText = 'NEXT ▶';
                 oakStep++;
             } else if (oakStep === 1) {
-                document.getElementById('oakDialog').innerText = "Now, your very own POKéMON legend is about to unfold! Step into my lab and pick your partner!";
+                document.getElementById('oakDialog').innerText = `Before your adventure begins, come to my lab and choose your first partner POKéMON, ${trainerName}!`;
+                document.getElementById('oakNextBtn').innerText = 'TO THE LAB ▶';
                 oakStep++;
-            } else {
+            } else if(oakStep === 2) {
                 firstLoad = false;
                 applyTrainerCardDetails();
                 saveGameData();
                 document.getElementById('oakTutorialOverlay').style.display = 'none';
                 openView('partyView', true);
+            } else {
+                firstLoad = false;
+                gameStarted = true;
+                nextEncounterTime = Date.now() + randomEncounterDelay();
+                applyTrainerCardDetails();
+                saveGameData();
+                document.getElementById('oakTutorialOverlay').style.display = 'none';
+                openView('mainMenuView', true);
             }
+        }
+
+        function showOakFinalIntro() {
+            oakStep = 3;
+            document.getElementById('oakInputContainer').style.display = 'none';
+            document.getElementById('oakDialog').innerText = `Your very own POKéMON adventure is about to begin, ${trainerName}!`;
+            document.getElementById('oakNextBtn').innerText = 'BEGIN ADVENTURE ▶';
+            document.getElementById('oakTutorialOverlay').style.display = 'flex';
         }
 
         function calcStat(base, lvl, isHP) {
@@ -3181,27 +3238,255 @@
             }
         }
 
-        function drawStarterPreview() {
-            if(starterChancesRemaining > 0 && partyTeam.length === 0) {
-                starterChancesRemaining--;
-                const mData = starterPool[Math.floor(Math.random() * starterPool.length)];
-                previewStarter = createPokemonInst(mData, 5);
-                const starterCard = document.getElementById('starterCard');
-                starterCard.innerHTML = `<img src="${getPokemonSpriteUrl(previewStarter.id)}" class="sprite-img"><strong>${previewStarter.name}</strong><span style="font-size:0.75rem;">Lv. 5 • ${previewStarter.type}</span>`;
-                applyPokemonBackground(starterCard, previewStarter);
-                document.getElementById('confirmStarterBtn').style.display = 'block';
-                document.getElementById('drawStarterBtn').innerText = `🔄 TRADE-IN (${starterChancesRemaining} LEFT)`;
-                if(starterChancesRemaining===0) document.getElementById('drawStarterBtn').disabled = true;
+        function ensureStarterChoices() {
+            if(partyTeam.length || starterOptions.length) return;
+            const shuffledPool = [...starterPool];
+            for(let index = shuffledPool.length - 1; index > 0; index--) {
+                const randomIndex = Math.floor(Math.random() * (index + 1));
+                [shuffledPool[index], shuffledPool[randomIndex]] = [shuffledPool[randomIndex], shuffledPool[index]];
+            }
+            starterOptions = shuffledPool.slice(0, 3).map(data => createPokemonInst(data, 5));
+            renderStarterBallControls();
+            renderStarterReveal();
+        }
+
+        function renderStarterBallControls() {
+            const controls = document.getElementById('starterBallControls');
+            if(!controls) return;
+            controls.innerHTML = starterOptions.map((pokemon, index) => `
+                <button type="button" aria-label="Open Poké Ball ${index + 1}" aria-pressed="${starterSceneChoiceIndex === index}" onclick="selectStarterChoice(${index})">
+                    <img src="offline/ui/poke-ball.png" alt=""><span>POKé BALL ${index + 1}</span>
+                </button>`).join('');
+        }
+
+        function selectStarterChoice(index) {
+            if(!starterOptions[index]) return;
+            starterSceneChoiceIndex = index;
+            previewStarter = starterOptions[index];
+            renderStarterBallControls();
+            setStarterSceneSelection(index);
+            renderStarterReveal();
+        }
+
+        function renderStarterReveal() {
+            const reveal = document.getElementById('starterReveal');
+            const confirmButton = document.getElementById('confirmStarterBtn');
+            if(!previewStarter) {
+                reveal.innerHTML = '<p class="starter-reveal-placeholder">Choose a ball to see which Pokémon is inside.</p>';
+                confirmButton.disabled = true;
+                return;
+            }
+            reveal.innerHTML = `<img src="${getPokemonSpriteUrl(previewStarter.id)}" class="sprite-img starter-reveal-sprite" alt="${previewStarter.name}"><div class="starter-reveal-details"><strong>${previewStarter.name}</strong><span>LEVEL 5</span><span class="starter-reveal-type">${previewStarter.type}</span></div>`;
+            const sprite = reveal.querySelector('.starter-reveal-sprite');
+            setSpritePosition(sprite, `starter-reveal:${previewStarter.id}`);
+            confirmButton.disabled = false;
+        }
+
+        function createStarterWoodTexture() {
+            const textureCanvas = document.createElement('canvas');
+            textureCanvas.width = 512;
+            textureCanvas.height = 512;
+            const context = textureCanvas.getContext('2d');
+            context.fillStyle = '#9b5a31';
+            context.fillRect(0, 0, 512, 512);
+            for(let board = 0; board < 6; board++) {
+                const top = board * 86;
+                context.fillStyle = board % 2 ? '#a96839' : '#b4723f';
+                context.fillRect(0, top + 2, 512, 82);
+                context.strokeStyle = 'rgba(55,28,16,.4)';
+                context.lineWidth = 3;
+                context.beginPath();
+                context.moveTo(0, top + 1);
+                context.lineTo(512, top + 1);
+                context.stroke();
+                for(let grain = 0; grain < 11; grain++) {
+                    const y = top + 8 + Math.random() * 67;
+                    context.strokeStyle = grain % 2 ? 'rgba(67,34,18,.12)' : 'rgba(255,203,133,.13)';
+                    context.lineWidth = 1 + Math.random() * 2;
+                    context.beginPath();
+                    context.moveTo(Math.random() * 90, y);
+                    context.bezierCurveTo(150, y - 8, 340, y + 9, 512, y - 3);
+                    context.stroke();
+                }
+            }
+            const texture = new THREE.CanvasTexture(textureCanvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 1);
+            return texture;
+        }
+
+        function createStarterBall(index, horizontalPosition) {
+            const group = new THREE.Group();
+            const radius = 0.48;
+            group.position.set(horizontalPosition, 2.15, 0.05);
+            group.userData.starterIndex = index;
+            const upper = new THREE.Mesh(
+                new THREE.SphereGeometry(radius, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2),
+                new THREE.MeshStandardMaterial({ color:0xe63932, roughness:0.38, metalness:0.08 })
+            );
+            const lower = new THREE.Mesh(
+                new THREE.SphereGeometry(radius, 32, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
+                new THREE.MeshStandardMaterial({ color:0xf3f1e8, roughness:0.48, metalness:0.04 })
+            );
+            const belt = new THREE.Mesh(
+                new THREE.TorusGeometry(radius * 0.98, 0.055, 12, 48),
+                new THREE.MeshStandardMaterial({ color:0x252628, roughness:0.5 })
+            );
+            belt.rotation.x = Math.PI / 2;
+            const buttonBase = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.18, 0.09, 32),
+                new THREE.MeshStandardMaterial({ color:0x262729, roughness:0.4 })
+            );
+            buttonBase.rotation.x = Math.PI / 2;
+            buttonBase.position.z = radius * 0.98;
+            const button = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.115, 0.115, 0.1, 32),
+                new THREE.MeshStandardMaterial({ color:0xf5f2e7, roughness:0.32 })
+            );
+            button.rotation.x = Math.PI / 2;
+            button.position.z = radius * 1.09;
+            [upper, lower, belt, buttonBase, button].forEach(mesh => {
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                mesh.userData.starterIndex = index;
+                group.add(mesh);
+            });
+            starterThreeScene.add(group);
+            starterThreeBalls.push({ group, upper, lower });
+        }
+
+        function initStarterTableScene() {
+            const container = document.getElementById('starterTableScene');
+            const canvas = document.getElementById('starterTableCanvas');
+            if(!container || !canvas) return;
+            if(!window.THREE) {
+                container.classList.add('three-unavailable');
+                renderStarterBallControls();
+                return;
+            }
+            try {
+                starterThreeRenderer = new THREE.WebGLRenderer({ canvas, antialias:true, preserveDrawingBuffer:true });
+                starterThreeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                starterThreeRenderer.shadowMap.enabled = true;
+                starterThreeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                starterThreeRenderer.outputColorSpace = THREE.SRGBColorSpace;
+                starterThreeScene = new THREE.Scene();
+                starterThreeScene.background = new THREE.Color(0xdce4d6);
+                starterThreeCamera = new THREE.PerspectiveCamera(37, 1, 0.1, 100);
+                starterThreeCamera.position.set(0, 5.8, 8.5);
+                starterThreeCamera.lookAt(0, 1.05, 0);
+                const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color:0xd5d9cc, roughness:1 }));
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -0.02;
+                ground.receiveShadow = true;
+                starterThreeScene.add(ground);
+                const wood = new THREE.MeshStandardMaterial({ map:createStarterWoodTexture(), roughness:0.78 });
+                const darkWood = new THREE.MeshStandardMaterial({ color:0x704027, roughness:0.85 });
+                const tableTop = new THREE.Mesh(new THREE.BoxGeometry(8.7, 0.3, 4.5), wood);
+                tableTop.position.set(0, 1.52, 0);
+                tableTop.castShadow = true;
+                tableTop.receiveShadow = true;
+                starterThreeScene.add(tableTop);
+                const apronFront = new THREE.Mesh(new THREE.BoxGeometry(8.15, 0.46, 0.22), darkWood);
+                apronFront.position.set(0, 1.18, 2.04);
+                apronFront.castShadow = true;
+                starterThreeScene.add(apronFront);
+                const apronBack = apronFront.clone();
+                apronBack.position.z = -2.04;
+                starterThreeScene.add(apronBack);
+                [-3.9, 3.9].forEach(x => [-1.85, 1.85].forEach(z => {
+                    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.38, 0.34), darkWood);
+                    leg.position.set(x, 0.69, z);
+                    leg.castShadow = true;
+                    leg.receiveShadow = true;
+                    starterThreeScene.add(leg);
+                }));
+                starterThreeScene.add(new THREE.HemisphereLight(0xfff1d7, 0x59402b, 2.1));
+                const keyLight = new THREE.DirectionalLight(0xffe0ad, 3.2);
+                keyLight.position.set(-4, 9, 6);
+                keyLight.castShadow = true;
+                keyLight.shadow.mapSize.set(1024, 1024);
+                starterThreeScene.add(keyLight);
+                const fillLight = new THREE.DirectionalLight(0xd9e7ff, 1.05);
+                fillLight.position.set(4, 5, -3);
+                starterThreeScene.add(fillLight);
+                starterThreeBalls = [];
+                [-2.75, 0, 2.75].forEach((position, index) => createStarterBall(index, position));
+                starterRaycaster = new THREE.Raycaster();
+                starterPointer = new THREE.Vector2();
+                canvas.addEventListener('click', handleStarterTableClick);
+                canvas.addEventListener('pointermove', handleStarterTablePointerMove);
+                container.classList.remove('three-unavailable');
+                if(typeof ResizeObserver !== 'undefined') {
+                    starterTableResizeObserver = new ResizeObserver(resizeStarterTableScene);
+                    starterTableResizeObserver.observe(container);
+                }
+                window.addEventListener('resize', resizeStarterTableScene);
+                resizeStarterTableScene();
+                starterThreeRenderer.setAnimationLoop(renderStarterTableScene);
+            } catch(error) {
+                container.classList.add('three-unavailable');
+                renderStarterBallControls();
             }
         }
 
+        function resizeStarterTableScene() {
+            if(!starterThreeRenderer || !starterThreeCamera) return;
+            const container = document.getElementById('starterTableScene');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            if(!width || !height) return;
+            starterThreeRenderer.setSize(width, height, false);
+            starterThreeCamera.aspect = width / height;
+            starterThreeCamera.updateProjectionMatrix();
+        }
+
+        function getStarterBallAtPointer(event) {
+            const canvas = document.getElementById('starterTableCanvas');
+            const bounds = canvas.getBoundingClientRect();
+            starterPointer.set(((event.clientX - bounds.left) / bounds.width) * 2 - 1, -((event.clientY - bounds.top) / bounds.height) * 2 + 1);
+            starterRaycaster.setFromCamera(starterPointer, starterThreeCamera);
+            const intersections = starterRaycaster.intersectObjects(starterThreeBalls.map(ball => ball.group), true);
+            return intersections.find(hit => Number.isInteger(hit.object.userData.starterIndex))?.object.userData.starterIndex ?? -1;
+        }
+
+        function handleStarterTableClick(event) {
+            if(!starterThreeRenderer || !starterOptions.length) return;
+            const index = getStarterBallAtPointer(event);
+            if(index >= 0) selectStarterChoice(index);
+        }
+
+        function handleStarterTablePointerMove(event) {
+            if(!starterThreeRenderer || !starterOptions.length) return;
+            document.getElementById('starterTableCanvas').style.cursor = getStarterBallAtPointer(event) >= 0 ? 'pointer' : 'default';
+        }
+
+        function setStarterSceneSelection(index) {
+            starterSceneChoiceIndex = index;
+        }
+
+        function renderStarterTableScene() {
+            if(!starterThreeRenderer || !starterThreeScene) return;
+            starterThreeBalls.forEach((ball, index) => {
+                const opened = index === starterSceneChoiceIndex;
+                ball.upper.position.y += ((opened ? 0.36 : 0) - ball.upper.position.y) * 0.16;
+            });
+            starterThreeRenderer.render(starterThreeScene, starterThreeCamera);
+        }
+
         function confirmStarter() {
-            if(previewStarter) {
-                partyTeam.push(previewStarter); pokedexSeen[previewStarter.id] = 'caught';
-                if(!gameStarted) { gameStarted = true; nextEncounterTime = Date.now() + randomEncounterDelay(); }
-                saveGameData(); updatePartyScreen(); applyTrainerCardDetails();
-                openView('mainMenuView', true);
-            }
+            if(!previewStarter) return;
+            const chosenStarter = previewStarter;
+            partyTeam.push(chosenStarter);
+            pokedexSeen[chosenStarter.id] = 'caught';
+            firstLoad = false;
+            saveGameData();
+            updatePartyScreen();
+            applyTrainerCardDetails();
+            openView('mainMenuView', true);
+            showOakFinalIntro();
         }
 
         function switchPartyScreen(screenNum) {
@@ -3226,13 +3511,18 @@
             if (partyTitle) partyTitle.innerText = (bagTargetMode || tmTargetMode) ? 'SELECT A POKéMON' : (currentPartyScreen === 1 ? 'ACTIVE PARTY' : 'PC STORAGE');
             const partyBackBtn = document.querySelector('#partyView .back-btn');
             if (partyBackBtn) partyBackBtn.onclick = bagTargetMode ? (() => cancelBagTargetSelection()) : (tmTargetMode ? (() => cancelTmTargetSelection()) : (() => openView('mainMenuView', true)));
+            const partyMenuBtn = document.getElementById('partyMenuBtn');
 
             if(partyTeam.length === 0) {
                 document.getElementById('starterSelectionContainer').style.display = 'flex';
                 document.getElementById('partyScreenContainer').style.display = 'none';
+                if(partyMenuBtn) partyMenuBtn.style.display = 'none';
+                if(!starterOptions.length) ensureStarterChoices();
+                resizeStarterTableScene();
             } else {
                 document.getElementById('starterSelectionContainer').style.display = 'none';
                 document.getElementById('partyScreenContainer').style.display = 'flex';
+                if(partyMenuBtn) partyMenuBtn.style.display = '';
                 const container = document.getElementById('partyContainer'); container.innerHTML = "";
                 
                 if(currentPartyScreen === 1) {
@@ -5330,6 +5620,7 @@
             applyAutomaticTheme();
             updateLocalTime();
             setInterval(updateLocalTime, 60000);
+            initStarterTableScene();
             loadGameData();
             hydrateCompleteKantoData().then(() => {
                 fireRedMachineDataReady = true;
