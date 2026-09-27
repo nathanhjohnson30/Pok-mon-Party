@@ -791,19 +791,9 @@
             <div id="detHabitatPanel" class="retro-box center-content pokemon-habitat habitat-normal" style="margin-top: 8px; padding: 6px; flex-shrink:0;">
                 <img id="detSprite" class="sprite-img habitat-draggable" src="">
             </div>
-            <div id="detAiBackgroundControls" style="display:none; width:100%; flex-direction:column; gap:4px;">
-                <label for="pollinationsAppKeyInput" style="font-size:0.7rem; font-weight:bold;">POLLINATIONS APP KEY</label>
-                <div style="display:flex; gap:4px; align-items:flex-start;">
-                    <input id="pollinationsAppKeyInput" type="text" autocomplete="off" spellcheck="false" placeholder="pk_..." aria-label="Pollinations publishable App Key" style="flex:1; min-width:0; margin:0; font-size:0.75rem;">
-                    <button id="pollinationsConnectBtn" class="retro-btn" type="button" onclick="connectPollinationsAccount()" style="width:auto; margin:0; padding:8px; font-size:0.7rem;">CONNECT</button>
-                    <button id="pollinationsDisconnectBtn" class="retro-btn" type="button" onclick="disconnectPollinationsAccount()" style="display:none; width:auto; margin:0; padding:8px; font-size:0.7rem;">DISCONNECT</button>
-                </div>
-                <small id="pollinationsConnectionStatus" aria-live="polite" style="font-size:0.65rem;">Connect your Pollinations account to generate backgrounds.</small>
-                <small id="pollinationsRedirectUri" style="font-size:0.6rem; overflow-wrap:anywhere;"></small>
-                <div id="detAiBackgroundActions" style="display:none; gap:4px;">
-                    <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground()" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
-                    <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground()" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
-                </div>
+            <div id="detAiBackgroundControls" style="display:none; width:100%; gap:4px;">
+                <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground()" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
+                <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground()" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
             </div>
             <div id="detInfoContainer" class="retro-box">
                 <p id="detType"><strong>TYPE:</strong> ---</p>
@@ -2475,7 +2465,6 @@
             const disconnectButton = document.getElementById('pollinationsDisconnectBtn');
             const status = document.getElementById('pollinationsConnectionStatus');
             const redirect = document.getElementById('pollinationsRedirectUri');
-            const actions = document.getElementById('detAiBackgroundActions');
             const appKey = localStorage.getItem(pollinationsAppKeyStorageKey) || '';
             const connected = !!getPollinationsAccessToken();
             if(input && document.activeElement !== input) input.value = appKey;
@@ -2486,7 +2475,6 @@
                 ? 'POLLINATIONS CONNECTED. Image generation uses your authorized Pollen.'
                 : 'Connect your Pollinations account to generate backgrounds.';
             if(redirect) redirect.innerText = `App Key redirect URI: ${getPollinationsRedirectUri() || 'Open the hosted HTTPS site to connect.'}`;
-            if(actions) actions.style.display = connected ? 'flex' : 'none';
         }
 
         async function connectPollinationsAccount() {
@@ -2595,7 +2583,6 @@
             const visible = devToolsEnabled && Number(pokemon?.id) >= 1 && Number(pokemon?.id) <= 151;
             if(controls) controls.style.display = visible ? 'flex' : 'none';
             if(!visible || !panel) return;
-            updatePollinationsConnectionControls();
             const savedUrl = getSavedPokedexAiBackgrounds()[String(pokemon.id)];
             if(savedUrl) {
                 panel.dataset.aiBackgroundUrl = savedUrl;
@@ -2619,8 +2606,7 @@
             if(!devToolsEnabled || !panel || !button || !pokemon || selectedId < 1 || selectedId > 151) return;
             const accessToken = getPollinationsAccessToken();
             if(!accessToken) {
-                updatePollinationsConnectionControls();
-                showToast('Connect your Pollinations account before generating a background.');
+                showToast('AI background generation is paused for now.');
                 return;
             }
             button.disabled = true;
