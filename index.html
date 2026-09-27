@@ -2397,25 +2397,42 @@
             button.disabled = true;
             if(saveButton) saveButton.disabled = true;
             button.innerText = '✨ GENERATING...';
-            const habitatScenes = {
-                CAVE: ['a crystal-lit cave mouth with damp stone and hanging moss', 'a deep cavern with reflective pools and soft shafts of light', 'a shadowy cave chamber with glowing minerals and layered rock'],
-                FOREST: ['an ancient forest clearing filled with ferns and filtered sunlight', 'a mossy woodland path beneath enormous leaves', 'a quiet grove with tangled roots, flowers, and drifting pollen'],
-                GRASSLAND: ['a wide meadow of tall grass beneath a bright open sky', 'a rolling field with wildflowers and warm late-afternoon light', 'a sheltered prairie hollow with seed heads moving in the breeze'],
-                MOUNTAIN: ['a high mountain terrace with wind-shaped grasses and distant peaks', 'a rocky hillside dotted with hardy plants beneath crisp sunlight', 'a quiet alpine pass with stone, mist, and dramatic cloud light'],
-                ROUGH_TERRAIN: ['a rugged red-earth trail scattered with stones and tough brush', 'a dry scrubland with cracked ground and hardy wild plants', 'a windswept rocky plain beneath a broad changing sky'],
-                SEA: ['a calm coastal inlet with clear water, reeds, and sunlit rocks', 'a deep underwater reef with drifting plants and shafts of blue light', 'a rocky shoreline with tide pools, sea foam, and a glowing horizon'],
-                URBAN: ['a quiet city garden reclaiming an old courtyard', 'a sunlit rooftop greenhouse surrounded by distant buildings', 'an overgrown alley with vines, puddles, and warm reflected light'],
-                WATERS_EDGE: ['a lush riverbank with reeds, smooth stones, and shallow water', 'a quiet pond edge surrounded by broad leaves and dragonflies', 'a misty lakeshore with wet roots, cattails, and soft morning light']
-            };
-            const fallbackScenes = ['a peaceful wilderness clearing with layered plants and soft light', 'a dramatic natural vista with rich textures and a clear focal space', 'a hidden habitat discovered beyond a winding trail'];
+            delete panel.dataset.aiBackgroundUrl;
+            panel.style.setProperty('--pokemon-bg', `url("${getPokemonBackgroundFile(pokemon)}")`);
             const habitat = getPokemonHabitat(pokemon);
             const habitatKey = String(habitat).replace(/-/g, '_');
-            const scenePool = habitatScenes[habitatKey] || fallbackScenes;
-            const sceneVariation = scenePool[Math.floor(Math.random() * scenePool.length)];
-            const lightingVariations = ['gentle sunrise light', 'bright midday light', 'warm golden-hour light', 'cool blue twilight', 'soft misty overcast light'];
-            const compositionVariations = ['wide environmental concept art with open space around the center', 'low ground-level perspective with strong foreground detail', 'layered depth from foreground plants to a distant horizon', 'slightly elevated naturalist view with a clear habitat layout'];
-            const lighting = lightingVariations[Math.floor(Math.random() * lightingVariations.length)];
-            const composition = compositionVariations[Math.floor(Math.random() * compositionVariations.length)];
+            const habitatDescriptions = {
+                CAVE: 'A deep natural cavern with layered stone, damp walls, hanging moss, crystal minerals, and a small reflective pool. No daylight, furniture, or buildings.',
+                FOREST: 'A dense natural woodland with tall trunks, ferns, moss, tangled roots, filtered sunlight, and a clear empty foreground. No buildings or indoor objects.',
+                GRASSLAND: 'An open meadow of tall grass, wildflowers, rolling earth, and a broad sky. The scene is spacious and sunlit, with no dense forest or buildings.',
+                MOUNTAIN: 'A rocky mountain terrace with distant peaks, wind-shaped grasses, exposed stone, thin clouds, and crisp highland light.',
+                ROUGH_TERRAIN: 'A rugged red-earth trail with scattered stones, dry brush, dusty ground, and open sky. No furniture or structures.',
+                SEA: 'An expansive aquatic scene with open water dominating the frame: reef shallows, clear blue-green water, underwater plants, ripples, and sunbeams.',
+                URBAN: 'A natural city-edge garden with stone paths, planted greenery, and quiet reclaimed space. No people, signs, furniture, or buildings as the focal subject.',
+                WATERS_EDGE: 'A water-dominant freshwater shoreline with a clear pond or river, reeds, wet stones, cattails, reflections, and shallow ripples. Land remains secondary; do not make it a forest clearing.',
+                RARE: 'A secluded, otherworldly natural landscape with open space, unusual atmospheric light, and subtle environmental mystery. No characters or structures.'
+            };
+            const habitatVariations = {
+                CAVE: ['Add a narrow underground stream and cool blue mineral light.', 'Add warm amber crystal reflections and a shallow stone shelf.', 'Add dripping water, soft mist, and a darker tunnel opening in the distance.'],
+                FOREST: ['Add a small mossy brook and warm sunbeams through the canopy.', 'Add broad prehistoric leaves and damp ground after light rain.', 'Add autumn-colored ground cover with a quiet green understory.'],
+                GRASSLAND: ['Add a few scattered boulders and a distant tree line.', 'Add pale wildflowers and a gentle breeze moving the tall grass.', 'Add warm dry earth, seed heads, and low rolling hills.'],
+                MOUNTAIN: ['Add a distant waterfall and cool blue atmospheric haze.', 'Add warm sunset light across the exposed rock faces.', 'Add a high pass with sparse shrubs and thin drifting clouds.'],
+                ROUGH_TERRAIN: ['Add a shallow dry creek bed and sun-baked red stones.', 'Add hardy thorny brush and a distant canyon wall.', 'Add windblown dust, cracked earth, and isolated patches of grass.'],
+                SEA: ['Use bright shallow reef water with coral-colored stone and sunbeams.', 'Use deeper blue-green water with layered underwater plants.', 'Use a rocky coast with tide pools, foam, and a clear horizon.'],
+                URBAN: ['Add an overgrown courtyard wall in the far background, never as the focal point.', 'Add a rooftop garden edge with distant skyline shapes kept subtle.', 'Add a reclaimed park path with planted beds and quiet shade.'],
+                WATERS_EDGE: ['Use a sunny pond edge with lily pads, reeds, and visible shallow water.', 'Use a calm riverbank with smooth stones, reflections, and a small current.', 'Use a misty marsh edge with cattails, wet roots, and water covering the foreground.'],
+                RARE: ['Add soft starlight and unusual but natural atmospheric color.', 'Add a quiet moonlit landscape with subtle luminous minerals.', 'Add bright high-altitude light and a vast, mysterious horizon.']
+            };
+            const baseHabitatDescription = habitatDescriptions[habitatKey] || 'A clearly defined natural habitat with an empty foreground and no human-made objects.';
+            const variations = habitatVariations[habitatKey] || ['Use a slightly different natural lighting and weather treatment while preserving the habitat.'];
+            let usedVariations = {};
+            try { usedVariations = JSON.parse(localStorage.getItem('firered_pokedex_scene_variations_v1') || '{}'); } catch(error) { usedVariations = {}; }
+            const usedForHabitat = Array.isArray(usedVariations[habitatKey]) ? usedVariations[habitatKey] : [];
+            const availableVariations = variations.filter(variation => !usedForHabitat.includes(variation));
+            const variation = (availableVariations.length ? availableVariations : variations)[Math.floor(Math.random() * (availableVariations.length ? availableVariations : variations).length)];
+            usedVariations[habitatKey] = availableVariations.length ? [...usedForHabitat, variation] : [variation];
+            localStorage.setItem('firered_pokedex_scene_variations_v1', JSON.stringify(usedVariations));
+            const habitatDescription = `${baseHabitatDescription} Subtle variation for this generation: ${variation}`;
             const typeEnvironmentDetails = {
                 FIRE: 'volcanic rock, scorched grasses, warm stone, faint heat haze, and small natural embers only',
                 WATER: 'clear water, wet stone, reeds, reflections, and natural ripples',
@@ -2432,18 +2449,10 @@
             };
             const primaryType = String(pokemon.type || 'NORMAL').split('/')[0].toUpperCase();
             const environmentDetails = typeEnvironmentDetails[primaryType] || typeEnvironmentDetails.NORMAL;
-            const habitatRequirements = {
-                WATERS_EDGE: 'Water must occupy at least half of the image: a clear pond, lake edge, riverbank, or shallow coastal inlet with visible water surface. Keep land secondary. Do not make this a forest clearing, dry field, or landlocked scene.',
-                SEA: 'Open water must dominate the image: a coastal inlet, reef, ocean shallows, or underwater environment. Do not make this a forest or dry-land scene.',
-                CAVE: 'Rock and cavern structure must dominate the image. Do not show furniture, buildings, or a normal outdoor forest.',
-                FOREST: 'Dense natural woodland must dominate the image, with no buildings, rooms, beds, furniture, or urban objects.',
-                GRASSLAND: 'Open meadow or prairie must dominate the image, not dense forest, rooms, or buildings.'
-            };
-            const habitatRequirement = habitatRequirements[habitatKey] || 'Make the mapped natural habitat unmistakable and dominant in the image.';
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
-            const prompt = `EMPTY SCENERY-ONLY BACKGROUND PLATE. Generate only a natural landscape with no subjects. Habitat category: ${habitat}. ${habitatRequirement} Scene: ${sceneVariation}. Lighting: ${lighting}. Composition: ${composition}. Environmental details: ${environmentDetails}. This is a clean empty background for a game UI. Do not depict any Pokemon, animal, monster, person, character, creature, silhouette, face, eyes, or living subject anywhere in the image.`;
+            const prompt = `EMPTY SCENERY-ONLY BACKGROUND PLATE. Follow this exact habitat description and do not invent a different setting: ${habitatDescription} Visual direction: Pokemon FireRed and LeafGreen Game Boy Advance environment art, warm saturated retro palette, earthy terracotta, rich evergreen, clear sky blue, soft cream highlights, crisp 2D pixel-art clusters, readable tile-based shapes, compact sprite-compatible shading, and a polished handheld RPG look. Keep the requested image quality and resolution. Add only these environmental details: ${environmentDetails}. This is a clean empty background for a game UI. Do not depict any Pokemon, animal, monster, person, character, creature, silhouette, face, eyes, or living subject anywhere in the image.`;
             const image = new Image();
-            const negativePrompt = 'all Pokemon, Squirtle, Blastoise, Charmander, Bulbasaur, animals, fish, birds, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, forest, trees, text, labels, captions, logos, tags, badges, signatures, watermark, battle arena, bedroom, furniture, buildings, other subjects, photorealistic, 3D render';
+            const negativePrompt = 'all Pokemon, Squirtle, Blastoise, Charmander, Bulbasaur, animals, fish, birds, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, text, labels, captions, logos, tags, badges, signatures, watermark, battle arena, bedroom, furniture, buildings, other subjects, photorealistic, 3D render';
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=pokedex-habitat-${selectedId}-${generationToken}&negative_prompt=${encodeURIComponent(negativePrompt)}`;
             image.onload = () => {
                 panel.dataset.aiBackgroundUrl = imageUrl;
@@ -2454,6 +2463,8 @@
                 if(saveButton) saveButton.innerText = '💾 SAVE BACKGROUND';
             };
             image.onerror = () => {
+                delete panel.dataset.aiBackgroundUrl;
+                panel.style.setProperty('--pokemon-bg', `url("${getPokemonBackgroundFile(pokemon)}")`);
                 button.disabled = false;
                 if(saveButton) saveButton.disabled = false;
                 button.innerText = '✨ AI BACKGROUND (RETRY)';
