@@ -161,7 +161,7 @@
         #partyView { min-height:0; overflow:hidden; }
         #partyScreenContainer { min-height:0; flex:1 1 0; overflow:hidden; }
         #partyScreenContainer > .retro-box#partyContainer { min-height:0; flex:1 1 0 !important; overflow-y:auto; overscroll-behavior:contain; }
-        #partyMenuBtn { flex-shrink:0; }
+        #partyBackBtn, #partyMenuBtn { flex-shrink:0; }
 
         .retro-box {
             border: 3px solid var(--border-color);
@@ -867,7 +867,8 @@
                 </div>
                 <div class="retro-box" id="partyContainer" style="flex:1; overflow-y:auto;"></div>
             </div>
-            <button class="retro-btn back-btn" id="partyMenuBtn" onclick="openView('mainMenuView', true)">◀ MENU</button>
+            <button class="retro-btn back-btn" id="partyBackBtn" onclick="goBackFromParty()" style="display:none;">◀ BACK</button>
+            <button class="retro-btn back-btn" id="partyMenuBtn" onclick="leavePartyForMainMenu()">◀ MAIN MENU</button>
         </div>
 
         <!-- BAG -->
@@ -3718,8 +3719,8 @@
             if (partyIndicator) partyIndicator.innerText = screenNum;
             const partyTitle = document.getElementById('partyScreenTitle');
             if (partyTitle) partyTitle.innerText = (bagTargetMode || tmTargetMode) ? 'SELECT A POKéMON' : (screenNum === 1 ? 'ACTIVE PARTY' : 'PC STORAGE');
-            const partyBackBtn = document.querySelector('#partyView .back-btn');
-            if (partyBackBtn) partyBackBtn.onclick = bagTargetMode ? (() => cancelBagTargetSelection()) : (tmTargetMode ? (() => cancelTmTargetSelection()) : (() => openView('mainMenuView', true)));
+            const partyBackBtn = document.getElementById('partyBackBtn');
+            if (partyBackBtn) partyBackBtn.onclick = goBackFromParty;
             updatePartyScreen();
         }
 
@@ -3728,19 +3729,21 @@
 
             const partyTitle = document.getElementById('partyScreenTitle');
             if (partyTitle) partyTitle.innerText = (bagTargetMode || tmTargetMode) ? 'SELECT A POKéMON' : (currentPartyScreen === 1 ? 'ACTIVE PARTY' : 'PC STORAGE');
-            const partyBackBtn = document.querySelector('#partyView .back-btn');
-            if (partyBackBtn) partyBackBtn.onclick = bagTargetMode ? (() => cancelBagTargetSelection()) : (tmTargetMode ? (() => cancelTmTargetSelection()) : (() => openView('mainMenuView', true)));
+            const partyBackBtn = document.getElementById('partyBackBtn');
+            if (partyBackBtn) partyBackBtn.onclick = goBackFromParty;
             const partyMenuBtn = document.getElementById('partyMenuBtn');
 
             if(partyTeam.length === 0) {
                 document.getElementById('starterSelectionContainer').style.display = 'flex';
                 document.getElementById('partyScreenContainer').style.display = 'none';
+                if(partyBackBtn) partyBackBtn.style.display = 'none';
                 if(partyMenuBtn) partyMenuBtn.style.display = 'none';
                 if(!starterOptions.length) ensureStarterChoices();
                 resizeStarterTableScene();
             } else {
                 document.getElementById('starterSelectionContainer').style.display = 'none';
                 document.getElementById('partyScreenContainer').style.display = 'flex';
+                if(partyBackBtn) partyBackBtn.style.display = (bagTargetMode || tmTargetMode) ? '' : 'none';
                 if(partyMenuBtn) partyMenuBtn.style.display = '';
                 const container = document.getElementById('partyContainer'); container.innerHTML = "";
                 
@@ -3813,6 +3816,31 @@
         function cancelBagTargetSelection() {
             closeBagTargetSelection();
             openView('bagView', true);
+        }
+
+        function cancelTmTargetSelection() {
+            tmTargetMode = false;
+            selectedTmEntry = null;
+            openView('bagView', true);
+        }
+
+        function goBackFromParty() {
+            if (bagTargetMode) {
+                cancelBagTargetSelection();
+                return;
+            }
+            if (tmTargetMode) {
+                cancelTmTargetSelection();
+                return;
+            }
+            openView('mainMenuView', true);
+        }
+
+        function leavePartyForMainMenu() {
+            if (bagTargetMode) closeBagTargetSelection();
+            tmTargetMode = false;
+            selectedTmEntry = null;
+            openView('mainMenuView', true);
         }
 
         function closeActionModal() { document.getElementById('partyActionModal').style.display = 'none'; selectedPartyIndex = null; }
