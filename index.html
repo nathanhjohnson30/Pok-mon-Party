@@ -791,9 +791,19 @@
             <div id="detHabitatPanel" class="retro-box center-content pokemon-habitat habitat-normal" style="margin-top: 8px; padding: 6px; flex-shrink:0;">
                 <img id="detSprite" class="sprite-img habitat-draggable" src="">
             </div>
-            <div id="detAiBackgroundControls" style="display:none; width:100%; gap:4px;">
-                <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground()" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
-                <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground()" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
+            <div id="detAiBackgroundControls" style="display:none; width:100%; flex-direction:column; gap:4px;">
+                <label for="pollinationsAppKeyInput" style="font-size:0.7rem; font-weight:bold;">POLLINATIONS APP KEY</label>
+                <div style="display:flex; gap:4px; align-items:flex-start;">
+                    <input id="pollinationsAppKeyInput" type="text" autocomplete="off" spellcheck="false" placeholder="pk_..." aria-label="Pollinations publishable App Key" style="flex:1; min-width:0; margin:0; font-size:0.75rem;">
+                    <button id="pollinationsConnectBtn" class="retro-btn" type="button" onclick="connectPollinationsAccount()" style="width:auto; margin:0; padding:8px; font-size:0.7rem;">CONNECT</button>
+                    <button id="pollinationsDisconnectBtn" class="retro-btn" type="button" onclick="disconnectPollinationsAccount()" style="display:none; width:auto; margin:0; padding:8px; font-size:0.7rem;">DISCONNECT</button>
+                </div>
+                <small id="pollinationsConnectionStatus" aria-live="polite" style="font-size:0.65rem;">Connect your Pollinations account to generate backgrounds.</small>
+                <small id="pollinationsRedirectUri" style="font-size:0.6rem; overflow-wrap:anywhere;"></small>
+                <div id="detAiBackgroundActions" style="display:none; gap:4px;">
+                    <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground()" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
+                    <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground()" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
+                </div>
             </div>
             <div id="detInfoContainer" class="retro-box">
                 <p id="detType"><strong>TYPE:</strong> ---</p>
@@ -2432,6 +2442,151 @@
             }
         }
 
+        const pollinationsAppKeyStorageKey = 'firered_pollinations_app_key';
+        const pollinationsAccessTokenStorageKey = 'firered_pollinations_access_token';
+        const pollinationsAccessTokenExpiryStorageKey = 'firered_pollinations_access_token_expiry';
+        const pollinationsOAuthStateStorageKey = 'firered_pollinations_oauth_state';
+
+        function getPollinationsRedirectUri() {
+            if(location.protocol !== 'https:') return '';
+            return `${location.origin}${location.pathname}`;
+        }
+
+        function getPollinationsAccessToken() {
+            const token = sessionStorage.getItem(pollinationsAccessTokenStorageKey);
+            const expiry = Number(sessionStorage.getItem(pollinationsAccessTokenExpiryStorageKey) || 0);
+            if(token && expiry && Date.now() >= expiry) {
+                sessionStorage.removeItem(pollinationsAccessTokenStorageKey);
+                sessionStorage.removeItem(pollinationsAccessTokenExpiryStorageKey);
+                return '';
+            }
+            return token || '';
+        }
+
+        function encodeBase64Url(bytes) {
+            let binary = '';
+            new Uint8Array(bytes).forEach(byte => { binary += String.fromCharCode(byte); });
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        function updatePollinationsConnectionControls() {
+            const input = document.getElementById('pollinationsAppKeyInput');
+            const connectButton = document.getElementById('pollinationsConnectBtn');
+            const disconnectButton = document.getElementById('pollinationsDisconnectBtn');
+            const status = document.getElementById('pollinationsConnectionStatus');
+            const redirect = document.getElementById('pollinationsRedirectUri');
+            const actions = document.getElementById('detAiBackgroundActions');
+            const appKey = localStorage.getItem(pollinationsAppKeyStorageKey) || '';
+            const connected = !!getPollinationsAccessToken();
+            if(input && document.activeElement !== input) input.value = appKey;
+            if(input) input.disabled = connected;
+            if(connectButton) connectButton.style.display = connected ? 'none' : '';
+            if(disconnectButton) disconnectButton.style.display = connected ? '' : 'none';
+            if(status) status.innerText = connected
+                ? 'POLLINATIONS CONNECTED. Image generation uses your authorized Pollen.'
+                : 'Connect your Pollinations account to generate backgrounds.';
+            if(redirect) redirect.innerText = `App Key redirect URI: ${getPollinationsRedirectUri() || 'Open the hosted HTTPS site to connect.'}`;
+            if(actions) actions.style.display = connected ? 'flex' : 'none';
+        }
+
+        async function connectPollinationsAccount() {
+            const input = document.getElementById('pollinationsAppKeyInput');
+            const status = document.getElementById('pollinationsConnectionStatus');
+            const appKey = String(input?.value || '').trim();
+            const redirectUri = getPollinationsRedirectUri();
+            if(!/^pk_[A-Za-z0-9_-]+$/.test(appKey)) {
+                if(status) status.innerText = 'Enter a valid Pollinations App Key beginning with pk_.';
+                return;
+            }
+            if(!redirectUri) {
+                if(status) status.innerText = 'Connect from the hosted HTTPS site; local file URLs cannot complete OAuth.';
+                return;
+            }
+            if(!window.crypto?.subtle) {
+                if(status) status.innerText = 'Secure PKCE is unavailable in this browser.';
+                return;
+            }
+            try {
+                const verifierBytes = crypto.getRandomValues(new Uint8Array(32));
+                const verifier = encodeBase64Url(verifierBytes);
+                const challenge = encodeBase64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+                const state = encodeBase64Url(crypto.getRandomValues(new Uint8Array(24)));
+                localStorage.setItem(pollinationsAppKeyStorageKey, appKey);
+                sessionStorage.setItem(pollinationsOAuthStateStorageKey, JSON.stringify({ state, verifier, appKey, redirectUri }));
+                const authorizeUrl = new URL('https://enter.pollinations.ai/authorize');
+                authorizeUrl.search = new URLSearchParams({
+                    response_type:'code',
+                    client_id:appKey,
+                    redirect_uri:redirectUri,
+                    state,
+                    code_challenge:challenge,
+                    code_challenge_method:'S256'
+                }).toString();
+                location.assign(authorizeUrl.toString());
+            } catch(error) {
+                if(status) status.innerText = `Could not start Pollinations sign-in: ${error.message}`;
+            }
+        }
+
+        async function completePollinationsOAuth() {
+            const callbackUrl = new URL(location.href);
+            const code = callbackUrl.searchParams.get('code');
+            const oauthError = callbackUrl.searchParams.get('error');
+            if(!code && !oauthError) return;
+            const cleanCallbackUrl = () => {
+                callbackUrl.searchParams.delete('code');
+                callbackUrl.searchParams.delete('state');
+                callbackUrl.searchParams.delete('error');
+                callbackUrl.searchParams.delete('error_description');
+                history.replaceState(history.state, '', callbackUrl.toString());
+            };
+            if(oauthError) {
+                sessionStorage.removeItem(pollinationsOAuthStateStorageKey);
+                cleanCallbackUrl();
+                showToast(oauthError === 'access_denied' ? 'Pollinations connection was cancelled.' : 'Pollinations sign-in was not completed.');
+                return;
+            }
+            let attempt = null;
+            try { attempt = JSON.parse(sessionStorage.getItem(pollinationsOAuthStateStorageKey) || 'null'); } catch(error) { attempt = null; }
+            if(!attempt || callbackUrl.searchParams.get('state') !== attempt.state) {
+                sessionStorage.removeItem(pollinationsOAuthStateStorageKey);
+                cleanCallbackUrl();
+                showToast('Pollinations sign-in could not be verified. Please connect again.');
+                return;
+            }
+            try {
+                const response = await fetch('https://enter.pollinations.ai/api/oauth/token', {
+                    method:'POST',
+                    headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+                    body:new URLSearchParams({
+                        grant_type:'authorization_code',
+                        code,
+                        client_id:attempt.appKey,
+                        redirect_uri:attempt.redirectUri,
+                        code_verifier:attempt.verifier
+                    })
+                });
+                const payload = await response.json();
+                if(!response.ok || !payload.access_token) throw new Error(payload.error_description || payload.error || `Token request failed (${response.status})`);
+                sessionStorage.setItem(pollinationsAccessTokenStorageKey, payload.access_token);
+                sessionStorage.setItem(pollinationsAccessTokenExpiryStorageKey, String(Date.now() + Number(payload.expires_in || 604800) * 1000));
+                sessionStorage.removeItem(pollinationsOAuthStateStorageKey);
+                cleanCallbackUrl();
+                showToast('Pollinations connected. You can regenerate Pokédex backgrounds now.');
+            } catch(error) {
+                sessionStorage.removeItem(pollinationsOAuthStateStorageKey);
+                cleanCallbackUrl();
+                showToast(`Pollinations sign-in failed: ${error.message}`);
+            }
+        }
+
+        function disconnectPollinationsAccount() {
+            sessionStorage.removeItem(pollinationsAccessTokenStorageKey);
+            sessionStorage.removeItem(pollinationsAccessTokenExpiryStorageKey);
+            updatePollinationsConnectionControls();
+            showToast('Pollinations disconnected.');
+        }
+
         function updatePokedexAiBackgroundControls(pokemon) {
             const controls = document.getElementById('detAiBackgroundControls');
             const button = document.getElementById('detAiBackgroundBtn');
@@ -2440,6 +2595,7 @@
             const visible = devToolsEnabled && Number(pokemon?.id) >= 1 && Number(pokemon?.id) <= 151;
             if(controls) controls.style.display = visible ? 'flex' : 'none';
             if(!visible || !panel) return;
+            updatePollinationsConnectionControls();
             const savedUrl = getSavedPokedexAiBackgrounds()[String(pokemon.id)];
             if(savedUrl) {
                 panel.dataset.aiBackgroundUrl = savedUrl;
@@ -2454,13 +2610,19 @@
             }
         }
 
-        function generatePokedexAiBackground(pokemonId = masterGen1[currentPokedexIndex]?.id) {
+        async function generatePokedexAiBackground(pokemonId = masterGen1[currentPokedexIndex]?.id) {
             const selectedId = Number(pokemonId);
             const panel = document.getElementById('detHabitatPanel');
             const button = document.getElementById('detAiBackgroundBtn');
             const saveButton = document.getElementById('detSaveBackgroundBtn');
             const pokemon = masterGen1.find(entry => entry.id === selectedId);
             if(!devToolsEnabled || !panel || !button || !pokemon || selectedId < 1 || selectedId > 151) return;
+            const accessToken = getPollinationsAccessToken();
+            if(!accessToken) {
+                updatePollinationsConnectionControls();
+                showToast('Connect your Pollinations account before generating a background.');
+                return;
+            }
             button.disabled = true;
             if(saveButton) saveButton.disabled = true;
             button.innerText = '✨ GENERATING...';
@@ -2524,26 +2686,52 @@
                 : 'warm saturated retro colors with earthy terracotta, rich evergreen, clear sky blue, and soft cream highlights';
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
             const prompt = `EMPTY SCENERY-ONLY BACKGROUND PLATE. Follow this exact habitat description and do not invent a different setting: ${habitatDescription} Visual direction: Pokemon FireRed and LeafGreen Game Boy Advance environment art, ${visualDirection}, crisp 2D pixel-art clusters, readable tile-based shapes, compact sprite-compatible shading, and a polished handheld RPG look. Keep the requested image quality and resolution. Add only these environmental details: ${environmentDetails}. This is a clean empty background for a game UI. Do not depict any Pokemon, animal, monster, person, character, creature, silhouette, face, eyes, or living subject anywhere in the image.`;
-            const image = new Image();
-            const negativePrompt = 'all Pokemon, Squirtle, Blastoise, Charmander, Bulbasaur, animals, fish, birds, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, text, labels, captions, logos, tags, badges, signatures, watermark, battle arena, bedroom, furniture, buildings, other subjects, photorealistic, 3D render';
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=pokedex-habitat-${selectedId}-${generationToken}&negative_prompt=${encodeURIComponent(negativePrompt)}`;
-            image.onload = () => {
-                panel.dataset.aiBackgroundUrl = imageUrl;
-                panel.style.setProperty('--pokemon-bg', `url("${imageUrl}")`);
+            const connectionStatus = document.getElementById('pollinationsConnectionStatus');
+            const restoreBackgroundActions = () => {
                 button.disabled = false;
                 if(saveButton) saveButton.disabled = false;
-                button.innerText = '✨ REGENERATE BACKGROUND';
-                if(saveButton) saveButton.innerText = '💾 SAVE BACKGROUND';
             };
-            image.onerror = () => {
+            try {
+                const response = await fetch('https://gen.pollinations.ai/v1/images/generations', {
+                    method:'POST',
+                    headers:{ 'Authorization':`Bearer ${accessToken}`, 'Content-Type':'application/json' },
+                    body:JSON.stringify({
+                        model:'black-forest-labs/flux.1-schnell',
+                        prompt,
+                        size:'1024x576',
+                        n:1,
+                        response_format:'url',
+                        seed:Math.floor(Math.random() * 2147483647)
+                    })
+                });
+                const payload = await response.json();
+                if(!response.ok) throw new Error(payload.error?.message || payload.error?.code || `Image request failed (${response.status})`);
+                const imageUrl = payload.data?.[0]?.url;
+                if(!imageUrl) throw new Error('The image service did not return an image URL.');
+                const image = new Image();
+                image.onload = () => {
+                    panel.dataset.aiBackgroundUrl = imageUrl;
+                    panel.style.setProperty('--pokemon-bg', `url("${imageUrl}")`);
+                    restoreBackgroundActions();
+                    button.innerText = '✨ REGENERATE BACKGROUND';
+                    if(saveButton) saveButton.innerText = '💾 SAVE BACKGROUND';
+                    if(connectionStatus) connectionStatus.innerText = 'POLLINATIONS CONNECTED. Image generated successfully.';
+                };
+                image.onerror = () => {
+                    restoreBackgroundActions();
+                    button.innerText = '✨ RETRY BACKGROUND';
+                    if(connectionStatus) connectionStatus.innerText = 'The generated image could not be loaded. Please retry.';
+                    showToast('The image service returned a URL that could not be loaded.');
+                };
+                image.src = imageUrl;
+            } catch(error) {
                 delete panel.dataset.aiBackgroundUrl;
                 panel.style.setProperty('--pokemon-bg', `url("${getPokemonBackgroundFile(pokemon)}")`);
-                button.disabled = false;
-                if(saveButton) saveButton.disabled = false;
-                button.innerText = '✨ AI BACKGROUND (RETRY)';
-                showToast('AI background generation failed; the local habitat remains active.');
-            };
-            image.src = imageUrl;
+                restoreBackgroundActions();
+                button.innerText = '✨ RETRY BACKGROUND';
+                if(connectionStatus) connectionStatus.innerText = `Generation failed: ${error.message}`;
+                showToast(`AI background generation failed: ${error.message}`);
+            }
         }
 
         function savePokedexAiBackground(pokemonId = masterGen1[currentPokedexIndex]?.id) {
@@ -5632,12 +5820,13 @@
             } 
         }
 
-        window.onload = () => {
+        window.onload = async () => {
             applyAutomaticTheme();
             updateLocalTime();
             setInterval(updateLocalTime, 60000);
             initStarterTableScene();
             loadGameData();
+            await completePollinationsOAuth();
             hydrateCompleteKantoData().then(() => {
                 fireRedMachineDataReady = true;
                 logHostActivity('FireRed move stats, effects, and TM/HM compatibility loaded.');
