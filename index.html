@@ -2780,8 +2780,13 @@
                 }
                 const scaleMatch = savedPosition.transform?.match(/scale\(([^)]+)\)/);
                 if(scaleMatch) sprite.dataset.dragScale = scaleMatch[1];
-                if(savedPosition.scale) sprite.dataset.dragScale = savedPosition.scale;
-                if(savedPosition.scale) sprite.style.setProperty('--sprite-user-scale', savedPosition.scale);
+                else if(savedPosition.scale) {
+                    const habitat = sprite.closest('.pokemon-habitat');
+                    sprite.dataset.dragScale = habitat
+                        ? Number(habitat.style.getPropertyValue('--habitat-sprite-scale')) || 1
+                        : savedPosition.scale;
+                }
+                if(savedPosition.scale && !sprite.closest('.pokemon-habitat')) sprite.style.setProperty('--sprite-user-scale', savedPosition.scale);
             } else {
                 sprite.style.left = sprite.dataset.baseLeft || '';
                 sprite.style.top = sprite.dataset.baseTop || '';
@@ -2841,7 +2846,8 @@
             spriteDragPointerId = event.pointerId;
             spriteDragOffsetX = event.clientX - (spriteRect.left + spriteRect.width / 2);
             spriteDragOffsetY = event.clientY - (spriteRect.top + spriteRect.height / 2);
-            const defaultScale = sprite.closest('.pokemon-habitat') ? 1.7 : 1;
+            const habitat = sprite.closest('.pokemon-habitat');
+            const defaultScale = habitat ? Number(habitat.style.getPropertyValue('--habitat-sprite-scale')) || 1 : 1;
             spriteDragScale = Number(sprite.dataset.dragScale || sprite.style.getPropertyValue('--sprite-user-scale') || defaultScale);
             if(isBattleSprite && draggedSpriteElement !== sprite) {
                 draggedSpriteElement.style.right = 'auto';
@@ -2867,7 +2873,8 @@
             draggedSpriteElement.style.top = `${y}px`;
             draggedSpriteElement.style.bottom = 'auto';
             draggedSprite.dataset.dragScale = spriteDragScale;
-            draggedSprite.style.setProperty('--sprite-user-scale', spriteDragScale);
+            if(draggedSprite.closest('.pokemon-habitat')) draggedSprite.style.setProperty('--habitat-sprite-scale', spriteDragScale);
+            else draggedSprite.style.setProperty('--sprite-user-scale', spriteDragScale);
             event.preventDefault();
         }
 
