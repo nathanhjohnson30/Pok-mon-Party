@@ -203,7 +203,7 @@
         .center-content { display: flex; flex-direction: column; align-items: center; text-align: center; }
         .sprite-img { width: 96px; height: 96px; object-fit: contain; }
         #detSprite, #sumSprite { width:144px !important; height:144px !important; }
-        #detHabitatPanel > .sprite-img, #sumHabitatPanel > .sprite-img { width:min(52%, 180px) !important; height:min(72%, 170px) !important; }
+        #detHabitatPanel > .sprite-img, #sumHabitatPanel > .sprite-img { width:min(52%, 180px) !important; height:144px !important; }
         .pokemon-habitat { position:relative; overflow:visible; min-height:230px; border-color:#536451; }
         .pokemon-habitat::before { content:""; position:absolute; inset:0; opacity:1; background-position:center; background-size:cover; background-repeat:no-repeat; }
         .pokemon-habitat.has-custom-background::before { background-image:var(--pokemon-bg); background-position:var(--pokemon-bg-position, center); background-size:var(--pokemon-bg-size, cover); }
@@ -248,8 +248,7 @@
         .battle-field { background-size:cover; background-position:center; background-repeat:no-repeat; background-blend-mode:soft-light; }
         #detInfoContainer { width:100%; text-align:left; font-size:0.85rem; margin:0 0 12px; padding:8px 12px; box-sizing:border-box; }
         #detInfoContainer p { margin:4px 0 !important; }
-        #sumHabitatPanel { min-height:220px; }
-        #sumHabitatPanel #sumSprite { bottom:-10px; left:50%; transform:translateX(-50%) scale(1.7); }
+        #sumHabitatPanel { min-height:230px; }
         .habitat-grass::before { background-color:#64ae4d; background-image:url("background%20jpg/grassland.jpg"); background-size:cover; background-position:center; background-repeat:no-repeat; }
         .habitat-fire::before { background-color:#f2b878; background-image:url("background%20jpg/fire.jpg"); background-size:cover; background-position:center; background-repeat:no-repeat; }
         .habitat-water::before { background-color:#92d8e8; background-image:url("background%20jpg/sea.jpg"); background-size:cover; background-position:center; background-repeat:no-repeat; }
