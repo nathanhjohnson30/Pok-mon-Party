@@ -3405,7 +3405,7 @@
             const sumSprite = document.getElementById('sumSprite');
             sumSprite.src = getPokemonSpriteUrl(poke.id);
             setSpritePosition(sumSprite, `pokedex:${poke.id}`);
-            document.getElementById('sumName').innerHTML = getPokemonNameMarkup(poke); document.getElementById('sumLvl').innerText = `Lv. ${poke.level} (${pokeIndex+1}/${list.length})`;
+            document.getElementById('sumName').innerHTML = getPokemonNameMarkup(poke); document.getElementById('sumLvl').innerText = `Lv. ${poke.level}`;
             document.getElementById('sumTypeInfo').innerText = poke.type; document.getElementById('sumHP').innerText = `${poke.hp} / ${poke.maxHp}`;
             document.getElementById('sumExp').innerText = `${poke.xp}`;
             const nextLvlXp = Math.floor(Math.pow(poke.level, 3) * 0.8);
