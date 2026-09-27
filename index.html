@@ -768,7 +768,10 @@
             <div id="detHabitatPanel" class="retro-box center-content pokemon-habitat habitat-normal" style="margin-top: 8px; padding: 6px; flex-shrink:0;">
                 <img id="detSprite" class="sprite-img habitat-draggable" src="">
             </div>
-            <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground(1)" style="display:none; background:#4060a0; margin-top:0; font-size:0.75rem;">✨ AI BACKGROUND</button>
+            <div id="detAiBackgroundControls" style="display:none; width:100%; gap:4px;">
+                <button id="detAiBackgroundBtn" class="retro-btn" onclick="generatePokedexAiBackground(1)" style="background:#4060a0; margin-top:0; font-size:0.75rem;">✨ REGENERATE BACKGROUND</button>
+                <button id="detSaveBackgroundBtn" class="retro-btn" onclick="savePokedexAiBackground(1)" style="background:#208040; margin-top:0; font-size:0.75rem;">💾 SAVE BACKGROUND</button>
+            </div>
             <div id="detInfoContainer" class="retro-box">
                 <p id="detType"><strong>TYPE:</strong> ---</p>
                 <p id="detHtWt"><strong>HT:</strong> ---  <strong>WT:</strong> ---</p>
@@ -2354,28 +2357,79 @@
             if(element && pokemon) element.style.backgroundImage = `url("${getPokemonBackgroundFile(pokemon)}")`;
         }
 
+        function getSavedPokedexAiBackgrounds() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('firered_pokedex_ai_backgrounds') || '{}');
+                return saved && typeof saved === 'object' ? saved : {};
+            } catch(error) {
+                return {};
+            }
+        }
+
+        function updatePokedexAiBackgroundControls(pokemon) {
+            const controls = document.getElementById('detAiBackgroundControls');
+            const button = document.getElementById('detAiBackgroundBtn');
+            const saveButton = document.getElementById('detSaveBackgroundBtn');
+            const panel = document.getElementById('detHabitatPanel');
+            const isBulbasaur = Number(pokemon?.id) === 1;
+            const visible = devToolsEnabled && isBulbasaur;
+            if(controls) controls.style.display = visible ? 'flex' : 'none';
+            if(!visible || !panel) return;
+            const savedUrl = getSavedPokedexAiBackgrounds()['1'];
+            if(savedUrl) {
+                panel.dataset.aiBackgroundUrl = savedUrl;
+                panel.style.setProperty('--pokemon-bg', `url("${savedUrl}")`);
+                if(saveButton) saveButton.innerText = '💾 SAVED BACKGROUND';
+            } else if(saveButton) {
+                saveButton.innerText = '💾 SAVE BACKGROUND';
+            }
+            if(button) {
+                button.disabled = false;
+                button.innerText = '✨ REGENERATE BACKGROUND';
+            }
+        }
+
         function generatePokedexAiBackground(pokemonId) {
             if(Number(pokemonId) !== 1) return;
             const panel = document.getElementById('detHabitatPanel');
             const button = document.getElementById('detAiBackgroundBtn');
+            const saveButton = document.getElementById('detSaveBackgroundBtn');
             const pokemon = masterGen1.find(entry => entry.id === 1);
-            if(!panel || !button || !pokemon) return;
+            if(!devToolsEnabled || !panel || !button || !pokemon) return;
             button.disabled = true;
+            if(saveButton) saveButton.disabled = true;
             button.innerText = '✨ GENERATING...';
             const prompt = `A lush, cinematic Bulbasaur habitat for a handheld RPG Pokedex entry: ${pokemon.flavor}. Bulbasaur is a small blue-green quadruped Pokemon with a leafy seed on its back, resting in a sunlit forest clearing with broad leaves, moss, ferns, soft morning mist, and warm natural light. No text, no logos, no other creatures, no battle arena, no visible Pokemon silhouette besides Bulbasaur's implied habitat. Rich greens with gentle blue accents, detailed but calm, wide composition. ${pokemon.type} type, ${getPokemonHabitat(pokemon)} habitat.`;
             const image = new Image();
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=bulbasaur-pokedex-${Date.now()}`;
             image.onload = () => {
+                panel.dataset.aiBackgroundUrl = imageUrl;
                 panel.style.setProperty('--pokemon-bg', `url("${imageUrl}")`);
                 button.disabled = false;
+                if(saveButton) saveButton.disabled = false;
                 button.innerText = '✨ REGENERATE BACKGROUND';
+                if(saveButton) saveButton.innerText = '💾 SAVE BACKGROUND';
             };
             image.onerror = () => {
                 button.disabled = false;
+                if(saveButton) saveButton.disabled = false;
                 button.innerText = '✨ AI BACKGROUND (RETRY)';
                 showToast('AI background generation failed; the local habitat remains active.');
             };
             image.src = imageUrl;
+        }
+
+        function savePokedexAiBackground(pokemonId) {
+            if(Number(pokemonId) !== 1 || !devToolsEnabled) return;
+            const panel = document.getElementById('detHabitatPanel');
+            const saveButton = document.getElementById('detSaveBackgroundBtn');
+            const url = panel?.dataset.aiBackgroundUrl;
+            if(!url) return showToast('Generate a Bulbasaur background before saving it.');
+            const saved = getSavedPokedexAiBackgrounds();
+            saved['1'] = url;
+            localStorage.setItem('firered_pokedex_ai_backgrounds', JSON.stringify(saved));
+            if(saveButton) saveButton.innerText = '💾 SAVED BACKGROUND';
+            showToast('Bulbasaur background saved for this browser.');
         }
 
         function fitBattleSprite(sprite, pokemon, role) {
@@ -2746,6 +2800,8 @@
             const button = document.getElementById('devToolsToggleBtn');
             if(body) body.hidden = !devToolsEnabled;
             if(button) button.textContent = `DEV TOOLS: ${devToolsEnabled ? 'ON' : 'OFF'}`;
+            const currentPokemon = masterGen1[currentPokedexIndex];
+            if(currentPokemon) updatePokedexAiBackgroundControls(currentPokemon);
         }
 
         function toggleSpriteDrag() {
@@ -2994,12 +3050,7 @@
             if(currentPokedexIndex < 0) currentPokedexIndex = 0;
             const p = masterGen1[currentPokedexIndex];
             setHabitatPanel('detHabitatPanel', p.type, p);
-            const aiBackgroundButton = document.getElementById('detAiBackgroundBtn');
-            if(aiBackgroundButton) {
-                aiBackgroundButton.style.display = p.id === 1 ? 'block' : 'none';
-                aiBackgroundButton.disabled = false;
-                aiBackgroundButton.innerText = '✨ AI BACKGROUND';
-            }
+            updatePokedexAiBackgroundControls(p);
 
             document.getElementById('detNumberName').innerText = `No.${String(p.id).padStart(3, '0')} ${p.name}`;
             const detSprite = document.getElementById('detSprite');
