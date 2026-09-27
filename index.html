@@ -2399,9 +2399,18 @@
             button.disabled = true;
             if(saveButton) saveButton.disabled = true;
             button.innerText = '✨ GENERATING...';
-            const prompt = `A lush, cinematic Bulbasaur habitat for a handheld RPG Pokedex entry: ${pokemon.flavor}. Bulbasaur is a small blue-green quadruped Pokemon with a leafy seed on its back, resting in a sunlit forest clearing with broad leaves, moss, ferns, soft morning mist, and warm natural light. No text, no logos, no other creatures, no battle arena, no visible Pokemon silhouette besides Bulbasaur's implied habitat. Rich greens with gentle blue accents, detailed but calm, wide composition. ${pokemon.type} type, ${getPokemonHabitat(pokemon)} habitat.`;
+            const sceneVariations = [
+                'a dawn-lit fern valley after a light rain',
+                'a warm greenhouse hidden deep in an ancient forest',
+                'a mossy streambank with giant leaves and tiny flowers',
+                'a misty jungle floor beneath broad tropical plants',
+                'a peaceful woodland garden with sunbeams through the canopy'
+            ];
+            const sceneVariation = sceneVariations[Math.floor(Math.random() * sceneVariations.length)];
+            const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
+            const prompt = `A lush, cinematic Bulbasaur habitat for a handheld RPG Pokedex entry: ${pokemon.flavor}. Bulbasaur is a small blue-green quadruped Pokemon with a leafy seed on its back, in ${sceneVariation}. Include broad leaves, moss, ferns, soft natural light, and a calm sense of discovery. No text, no logos, no other creatures, no battle arena, no visible Pokemon silhouette besides Bulbasaur's implied habitat. Rich greens with gentle blue accents, detailed but calm, wide composition. ${pokemon.type} type, ${getPokemonHabitat(pokemon)} habitat.`;
             const image = new Image();
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=bulbasaur-pokedex-${Date.now()}`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=bulbasaur-pokedex-${generationToken}`;
             image.onload = () => {
                 panel.dataset.aiBackgroundUrl = imageUrl;
                 panel.style.setProperty('--pokemon-bg', `url("${imageUrl}")`);
