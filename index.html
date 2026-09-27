@@ -208,7 +208,7 @@
         .pokemon-habitat.has-custom-background::before { background-image:var(--pokemon-bg); background-position:var(--pokemon-bg-position, center); background-size:var(--pokemon-bg-size, cover); }
         .pokemon-habitat::after { display:none; }
         .pokemon-habitat > * { position:relative; z-index:1; }
-        .pokemon-habitat > .sprite-img { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%) scale(1.7); transform-origin:center bottom; z-index:2; }
+        .pokemon-habitat > .sprite-img { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%) scale(var(--habitat-sprite-scale, 1.7)); transform-origin:center bottom; z-index:2; }
         .habitat-draggable { cursor:grab; touch-action:none; }
         .habitat-draggable.is-dragging { cursor:grabbing; }
         img.sprite-img { cursor:grab; touch-action:none; }
@@ -2475,6 +2475,15 @@
             sprite.dataset.battleRole = role;
         }
 
+        function getPokemonHeightInches(pokemon) {
+            const heightMatch = String(pokemon?.ht || '').match(/(\d+)'(?:\s*)(\d+)?/);
+            return heightMatch ? Number(heightMatch[1]) * 12 + Number(heightMatch[2] || 0) : 36;
+        }
+
+        function getHabitatSpriteScale(pokemon) {
+            return Math.max(0.9, Math.min(2.35, 0.9 + getPokemonHeightInches(pokemon) / 50));
+        }
+
         function applyRandomBattleFallback(field) {
             const backgrounds = [
                 'background%20jpg/grassland.jpg', 'background%20jpg/forest.jpg', 'background%20jpg/sea.jpg',
@@ -2580,6 +2589,7 @@
             const backgroundFile = getPokemonBackgroundFile(pokemon || { type });
             panel.className = `retro-box center-content pokemon-habitat ${habitatClass} has-custom-background`;
             panel.dataset.backgroundKey = `${panelId}:${pokemon?.id || type}`;
+            panel.style.setProperty('--habitat-sprite-scale', getHabitatSpriteScale(pokemon));
             panel.style.setProperty('--pokemon-bg', `url("${backgroundFile}")`);
             panel.style.setProperty('--pokemon-bg-position', 'center');
             panel.style.setProperty('--pokemon-bg-size', 'cover');
@@ -2619,7 +2629,8 @@
                 event.preventDefault();
                 return;
             }
-            const defaultScale = sprite.closest('.pokemon-habitat') ? 1.7 : 1;
+            const habitat = sprite.closest('.pokemon-habitat');
+            const defaultScale = habitat ? Number(habitat.style.getPropertyValue('--habitat-sprite-scale')) || 1.7 : 1;
             const currentScale = Number(sprite.dataset.dragScale || defaultScale);
             const scaleChange = event.deltaY < 0 ? 0.1 : -0.1;
             const nextScale = Math.min(4, Math.max(0.3, currentScale + scaleChange));
