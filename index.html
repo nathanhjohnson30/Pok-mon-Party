@@ -206,8 +206,6 @@
         .pokemon-habitat { position:relative; overflow:visible; min-height:230px; border-color:#536451; }
         .pokemon-habitat::before { content:""; position:absolute; inset:0; opacity:1; background-position:center; background-size:cover; background-repeat:no-repeat; }
         .pokemon-habitat.has-custom-background::before { background-image:var(--pokemon-bg); background-position:var(--pokemon-bg-position, center); background-size:var(--pokemon-bg-size, cover); }
-        .pokemon-habitat.has-custom-background { cursor:grab; }
-        .pokemon-habitat.has-custom-background.is-background-dragging { cursor:grabbing; }
         .pokemon-habitat::after { display:none; }
         .pokemon-habitat > * { position:relative; z-index:1; }
         .pokemon-habitat > .sprite-img { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%) scale(1.7); transform-origin:center bottom; z-index:2; }
@@ -2417,9 +2415,10 @@
             const lighting = lightingVariations[Math.floor(Math.random() * lightingVariations.length)];
             const composition = compositionVariations[Math.floor(Math.random() * compositionVariations.length)];
             const generationToken = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}`;
-            const prompt = `A distinctive habitat background for a handheld RPG Pokedex entry about ${pokemon.name}: ${pokemon.flavor}. The creature is a ${pokemon.type} type Pokemon associated with a ${habitat} habitat. Show ${sceneVariation}, with ${lighting}. Use ${composition}. The image should suggest what this species would naturally live in without showing the Pokemon itself. No text, no logos, no other creatures, no battle arena, no character silhouettes. Make the palette, weather, vegetation, geology, and atmosphere feel specific to this species rather than generic fantasy scenery.`;
+            const prompt = `Environment-only habitat background inspired by the natural ecology of ${pokemon.name}. Species notes: ${pokemon.flavor}. ${pokemon.name} is a ${pokemon.type} type species associated with a ${habitat} habitat. Show only ${sceneVariation}, with ${lighting}. Use ${composition}. The image must be an empty scenic location for a Pokedex display, with no subject creature present.`;
             const image = new Image();
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=bulbasaur-pokedex-${generationToken}`;
+            const negativePrompt = 'Pokemon, animals, monsters, creatures, people, characters, silhouettes, statues, eggs, faces, eyes, text, logos, battle arena';
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=576&nologo=true&seed=pokedex-habitat-${selectedId}-${generationToken}&negative_prompt=${encodeURIComponent(negativePrompt)}`;
             image.onload = () => {
                 panel.dataset.aiBackgroundUrl = imageUrl;
                 panel.style.setProperty('--pokemon-bg', `url("${imageUrl}")`);
@@ -2566,11 +2565,8 @@
             panel.className = `retro-box center-content pokemon-habitat ${habitatClass} has-custom-background`;
             panel.dataset.backgroundKey = `${panelId}:${pokemon?.id || type}`;
             panel.style.setProperty('--pokemon-bg', `url("${backgroundFile}")`);
-            const savedBackground = backgroundPositions.get(panel.dataset.backgroundKey);
-            panel.style.setProperty('--pokemon-bg-position', savedBackground || 'center');
-            const savedScale = backgroundScales.get(panel.dataset.backgroundKey) || '1';
-            panel.dataset.backgroundScale = savedScale;
-            panel.style.setProperty('--pokemon-bg-size', savedScale === '1' ? 'cover' : `${Number(savedScale) * 100}% auto`);
+            panel.style.setProperty('--pokemon-bg-position', 'center');
+            panel.style.setProperty('--pokemon-bg-size', 'cover');
         }
 
         let spriteDragEnabled = true;
@@ -2582,80 +2578,14 @@
         let spriteDragScale = 1;
         let spriteIdentityCounter = 0;
         const savedSpritePositions = JSON.parse(localStorage.getItem('firered_sprite_positions') || '{}');
-        const savedBackgroundPositions = JSON.parse(localStorage.getItem('firered_background_positions') || '{}');
-        const savedBackgroundScales = JSON.parse(localStorage.getItem('firered_background_scales') || '{}');
         const spritePositions = new Map(Object.entries(savedSpritePositions));
-        const backgroundPositions = new Map(Object.entries(savedBackgroundPositions));
-        const backgroundScales = new Map(Object.entries(savedBackgroundScales));
 
         document.addEventListener('pointerdown', handleSpritePointerDown);
-        document.addEventListener('pointerdown', handleBackgroundPointerDown);
         document.addEventListener('wheel', handleSpriteWheel, { passive:false });
-        document.addEventListener('wheel', handleBackgroundWheel, { passive:false });
 
         function handleSpritePointerDown(event) {
             const sprite = event.target.closest('img.sprite-img');
             if(sprite) startSpriteDrag(event);
-        }
-
-        let backgroundDragPanel = null;
-        let backgroundDragPointerId = null;
-        let backgroundDragStartX = 0;
-        let backgroundDragStartY = 0;
-        let backgroundDragBaseX = 0;
-        let backgroundDragBaseY = 0;
-
-        function handleBackgroundPointerDown(event) {
-            if(!spriteDragEnabled || event.target.closest('img.sprite-img')) return;
-            const panel = event.target.closest('.pokemon-habitat.has-custom-background');
-            if(!panel) return;
-            const current = backgroundPositions.get(panel.dataset.backgroundKey) || 'center';
-            const match = current.match(/^(-?[\d.]+)px\s+(-?[\d.]+)px$/);
-            backgroundDragPanel = panel;
-            backgroundDragPointerId = event.pointerId;
-            backgroundDragStartX = event.clientX;
-            backgroundDragStartY = event.clientY;
-            backgroundDragBaseX = match ? Number(match[1]) : 0;
-            backgroundDragBaseY = match ? Number(match[2]) : 0;
-            panel.classList.add('is-background-dragging');
-            panel.setPointerCapture(event.pointerId);
-            document.addEventListener('pointermove', dragBackground);
-            document.addEventListener('pointerup', endBackgroundDrag);
-            document.addEventListener('pointercancel', endBackgroundDrag);
-            event.preventDefault();
-        }
-
-        function dragBackground(event) {
-            if(!backgroundDragPanel || event.pointerId !== backgroundDragPointerId) return;
-            const position = `${backgroundDragBaseX + event.clientX - backgroundDragStartX}px ${backgroundDragBaseY + event.clientY - backgroundDragStartY}px`;
-            backgroundDragPanel.style.setProperty('--pokemon-bg-position', position);
-            backgroundPositions.set(backgroundDragPanel.dataset.backgroundKey, position);
-            localStorage.setItem('firered_background_positions', JSON.stringify(Object.fromEntries(backgroundPositions)));
-            event.preventDefault();
-        }
-
-        function handleBackgroundWheel(event) {
-            if(!spriteDragEnabled || event.target.closest('img.sprite-img')) return;
-            const panel = event.target.closest('.pokemon-habitat.has-custom-background');
-            if(!panel) return;
-            const currentScale = Number(panel.dataset.backgroundScale || 1);
-            const nextScale = Math.min(3, Math.max(1, currentScale + (event.deltaY < 0 ? 0.1 : -0.1)));
-            panel.dataset.backgroundScale = nextScale;
-            panel.style.setProperty('--pokemon-bg-size', nextScale === 1 ? 'cover' : `${nextScale * 100}% auto`);
-            backgroundScales.set(panel.dataset.backgroundKey, String(nextScale));
-            localStorage.setItem('firered_background_scales', JSON.stringify(Object.fromEntries(backgroundScales)));
-            event.preventDefault();
-        }
-
-        function endBackgroundDrag(event) {
-            if(!backgroundDragPanel || event.pointerId !== backgroundDragPointerId) return;
-            backgroundDragPanel.classList.remove('is-background-dragging');
-            if(backgroundDragPanel.hasPointerCapture(event.pointerId)) backgroundDragPanel.releasePointerCapture(event.pointerId);
-            document.removeEventListener('pointermove', dragBackground);
-            document.removeEventListener('pointerup', endBackgroundDrag);
-            document.removeEventListener('pointercancel', endBackgroundDrag);
-            backgroundDragPanel = null;
-            backgroundDragPointerId = null;
         }
 
         function handleSpriteWheel(event) {
