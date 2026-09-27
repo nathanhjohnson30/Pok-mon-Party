@@ -157,6 +157,10 @@
         .sub-view.active {
             display: flex !important;
         }
+        #partyView { min-height:0; overflow:hidden; }
+        #partyScreenContainer { min-height:0; flex:1 1 0; overflow:hidden; }
+        #partyScreenContainer > .retro-box#partyContainer { min-height:0; flex:1 1 0 !important; overflow-y:auto; overscroll-behavior:contain; }
+        #partyMenuBtn { flex-shrink:0; }
 
         .retro-box {
             border: 3px solid var(--border-color);
@@ -862,7 +866,7 @@
                 </div>
                 <div class="retro-box" id="partyContainer" style="flex:1; overflow-y:auto;"></div>
             </div>
-            <button class="retro-btn back-btn" id="partyMenuBtn" onclick="openView('mainMenuView', true)">◀ MENU [Esc]</button>
+            <button class="retro-btn back-btn" id="partyMenuBtn" onclick="openView('mainMenuView', true)">◀ MENU</button>
         </div>
 
         <!-- BAG -->
